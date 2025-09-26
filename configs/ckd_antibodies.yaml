@@ -1,0 +1,168 @@
+seed: 42
+out_dir: ./out/ckd_antibodies
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 21200
+  genders:
+    - concept_id: 8507 # male
+      p: 0.48
+    - concept_id: 8532 # female
+      p: 0.52
+
+# Ensure most people carry at least one CKD-related condition by using
+# overlapping probabilities across common CKD concepts (stages, ESRD, dialysis).
+condition:
+  enabled: true
+  items:
+    # Broad / stages
+    - concept_id: 198185 # Chronic renal failure / CKD (broad)
+      p: 0.60
+    - concept_id: 443614 # CKD stage 1
+      p: 0.05
+    - concept_id: 443601 # CKD stage 2
+      p: 0.08
+    - concept_id: 443597 # CKD stage 3
+      p: 0.25
+    - concept_id: 45763854 # CKD stage 3A
+      p: 0.06
+    - concept_id: 45763855 # CKD stage 3B
+      p: 0.06
+    - concept_id: 443612 # CKD stage 4
+      p: 0.15
+    - concept_id: 443611 # CKD stage 5
+      p: 0.10
+    - concept_id: 193782 # End-stage renal disease (ESRD)
+      p: 0.08
+
+    # Proteinuria qualifiers
+    - concept_id: 44792230 # CKD stage 3 with proteinuria
+      p: 0.04
+    - concept_id: 44792231 # CKD stage 3 without proteinuria
+      p: 0.04
+    - concept_id: 44792232 # CKD stage 3A with proteinuria
+      p: 0.03
+    - concept_id: 44792249 # CKD stage 3A without proteinuria
+      p: 0.03
+    - concept_id: 44792250 # CKD stage 3B with proteinuria
+      p: 0.03
+    - concept_id: 44792251 # CKD stage 3B without proteinuria
+      p: 0.03
+    - concept_id: 44792252 # CKD stage 4 with proteinuria
+      p: 0.03
+    - concept_id: 44792253 # CKD stage 4 without proteinuria
+      p: 0.03
+    - concept_id: 44792254 # CKD stage 5 with proteinuria
+      p: 0.02
+    - concept_id: 44792255 # CKD stage 5 without proteinuria
+      p: 0.02
+
+    # Stage 5 specifics
+    - concept_id: 37017813 # CKD stage 5 on dialysis
+      p: 0.05
+    - concept_id: 37018761 # CKD stage 5 with transplant
+      p: 0.02
+
+    # Etiologies / complications / hypertensive/diabetic associations
+    - concept_id: 43531578 # CKD due to type 2 diabetes mellitus
+      p: 0.04
+    - concept_id: 44782429 # CKD due to hypertension
+      p: 0.04
+    - concept_id: 45773688 # CKD due to type 1 diabetes mellitus
+      p: 0.01
+    - concept_id: 43531653 # CKD stage 3 due to type 2 diabetes mellitus
+      p: 0.03
+    - concept_id: 44782691 # CKD stage 3 due to hypertension
+      p: 0.03
+    - concept_id: 45771075 # CKD stage 3 due to type 1 diabetes mellitus
+      p: 0.01
+    - concept_id: 46273636 # CKD stage 3 due to benign hypertension
+      p: 0.006
+    - concept_id: 601163 # CKD stage 3 due to drug-induced diabetes mellitus
+      p: 0.01
+    - concept_id: 1075909 # CKD stage 3A due to type 2 diabetes mellitus
+      p: 0.01
+    - concept_id: 1075908 # CKD stage 3B due to type 2 diabetes mellitus
+      p: 0.01
+    - concept_id: 1075911 # CKD stage 3A due to type 1 diabetes mellitus
+      p: 0.008
+    - concept_id: 1075910 # CKD stage 3B due to type 1 diabetes mellitus
+      p: 0.008
+    - concept_id: 43021835 # Hypertensive heart and CKD stage 3
+      p: 0.01
+    - concept_id: 762001 # Benign hypertensive heart disease and CKD stage 3
+      p: 0.008
+    - concept_id: 762033 # Malignant hypertensive heart disease and CKD stage 3
+      p: 0.004
+    - concept_id: 1075888 # Hypertension in CKD stage 3 due to type 1 DM
+      p: 0.006
+    - concept_id: 45757446 # Hypertension in CKD stage 3 due to type 2 DM
+      p: 0.006
+    - concept_id: 43020456 # Malignant hypertensive CKD stage 3
+      p: 0.005
+
+    # Other CKD-related states
+    - concept_id: 36716947 # Chronic renal insufficiency
+      p: 0.04
+    - concept_id: 36716184 # CKD following donor nephrectomy
+      p: 0.005
+    - concept_id: 36716455 # CKD due to traumatic loss of kidney
+      p: 0.003
+    - concept_id: 36717349 # CKD due to systemic infection
+      p: 0.004
+    - concept_id: 36717534 # CKD due to/following excision of neoplasm of kidney
+      p: 0.003
+    - concept_id: 37017104 # CKD mineral and bone disorder
+      p: 0.01
+
+    # Anemia / complications
+    - concept_id: 37019193 # Anemia due to CKD stage 3
+      p: 0.02
+    - concept_id: 443961 # Anemia of chronic renal failure
+      p: 0.05
+
+# COVID-19 vaccine exposures (RxNorm ingredient-level concepts commonly used in DRUG_EXPOSURE).
+# p values act as selection weights so every person gets at least one of these by categorical draw.
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 3955321 # Pfizer - SARS-CoV-2 vaccine
+      p: 0.45
+    - concept_id: 3955320 # Moderna - SARS-CoV-2 vaccine
+      p: 0.25
+    - concept_id: 3955322 # Oxford/AstraZeneca - AZD1222
+      p: 0.30
+
+# SARS-CoV-2 antibody measurements with plausible distributions/units.
+# Dist meanings:
+#   normal: param1 = mean, param2 = sd
+#   lognormal: param1 = mu (ln-scale), param2 = sigma (ln-scale)
+#   uniform: param1 = low, param2 = high
+measurement:
+  enabled: true
+  items:
+    - concept_id: 3955314 # Anti-spike (S) antibody
+      unit_concept_id: 12310002 # AU/mL
+      p: 0.70
+      dist: lognormal
+      param1: 7.0 # mu (median ~ e^7 ≈ 1096 AU/mL)
+      param2: 0.7 # sigma
+    - concept_id: 3955313 # Anti-nucleocapsid (N) antibody
+      unit_concept_id: 12310003 # Index
+      p: 0.50
+      dist: lognormal
+      param1: 0.5 # skewed lower; many vaccine-only will be low/negative
+      param2: 0.7
+    - concept_id: 3955300 # SARS-CoV-2 IgM
+      unit_concept_id: 12310004 # Titer
+      p: 0.30
+      dist: lognormal
+      param1: 1.2
+      param2: 0.6
+    - concept_id: 3955297 # SARS-CoV-2 IgA
+      unit_concept_id: 12310001 # U/mL
+      p: 0.25
+      dist: lognormal
+      param1: 3.2
+      param2: 0.8

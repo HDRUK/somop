@@ -1,0 +1,57 @@
+seed: 42
+out_dir: ./out/symptoms
+chunk_size: 100000
+
+person:
+  enabled: true
+  n_people: 2345756
+  genders:
+    - concept_id: 8507 # male
+      p: 0.28
+    - concept_id: 8532 # female
+      p: 0.72
+
+# People may or may not have a COVID-19 vaccine exposure.
+# Using moderate probabilities so a substantial portion remain unvaccinated.
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 3955321 # Pfizer - SARS-CoV-2 vaccine
+      p: 0.35
+    - concept_id: 3955320 # Moderna - SARS-CoV-2 vaccine
+      p: 0.20
+    - concept_id: 3955322 # Oxford/AstraZeneca - AZD1222
+      p: 0.10
+
+# Symptom/condition signals (independent Bernoulli draws).
+condition:
+  enabled: true
+  items:
+    - concept_id: 254761 # Cough
+      p: 0.25
+    - concept_id: 4147326 # Sore throat
+      p: 0.20
+    - concept_id: 378253 # Headache
+      p: 0.30
+    - concept_id: 3959287 # Long COVID-19
+      p: 0.06
+
+# Close contact with confirmed COVID-19 case (observation).
+observation:
+  enabled: true
+  items:
+    - concept_id: 3959231 # Close contact with confirmed COVID-19 case
+      p: 0.18
+
+# Coronavirus RNA detection assay (e.g., PCR/NAAT).
+# Using an index-style unit and a lognormal distribution to yield many low values with a right tail.
+# Adjust p to control how many people receive the test at all.
+measurement:
+  enabled: true
+  items:
+    - concept_id: 45770687 # Coronavirus RNA (ribonucleic acid) detection assay
+      unit_concept_id: 12310003 # Index
+      p: 0.65
+      dist: lognormal # param1 = mu (ln-scale), param2 = sigma (ln-scale)
+      param1: -0.8 # median ~ e^-0.8 ≈ 0.45 (tune to your positivity threshold)
+      param2: 0.7

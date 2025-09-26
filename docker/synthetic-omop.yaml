@@ -1,0 +1,68 @@
+name: synthetic-omop
+
+services:
+  db:
+    image: postgres:16
+    ports:
+      - 5435:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    volumes:
+      - ./init-db:/docker-entrypoint-initdb.d
+
+  omop1:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: omop1
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./out/ckd_antibodies:/data:ro
+
+  omop2:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_NAME: omop2
+      DB_PASSWORD: postgres
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./out/conditions:/data:ro
+
+  omop3:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_NAME: omop3
+      DB_PASSWORD: postgres
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./out/symptoms:/data:ro
+
+  omop4:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_NAME: omop4
+      DB_PASSWORD: postgres
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./out/more_symptoms:/data:ro

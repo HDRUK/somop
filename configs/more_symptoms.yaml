@@ -1,0 +1,143 @@
+seed: 42
+out_dir: ./out/more_symptoms
+chunk_size: 100000
+
+person:
+  enabled: true
+  n_people: 325235
+  genders:
+    - concept_id: 8507 # male
+      p: 0.53
+    - concept_id: 8532 # female
+      p: 0.47
+
+# People may or may not have a COVID-19 vaccine exposure
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 3955321 # Pfizer - SARS-CoV-2 vaccine
+      p: 0.30
+    - concept_id: 3955320 # Moderna - SARS-CoV-2 vaccine
+      p: 0.20
+    - concept_id: 3955322 # Oxford/AstraZeneca - AZD1222
+      p: 0.10
+
+# Observations: close contact and suspected COVID-19
+observation:
+  enabled: true
+  items:
+    - concept_id: 3959231 # Close contact with confirmed COVID-19 case
+      p: 0.18
+    - concept_id: 37310268 # Suspected COVID-19 (SNOMED)
+      p: 0.25
+
+# SARS-CoV-2 antibody measurements (multiple assays; lognormal skew for realism)
+measurement:
+  enabled: true
+  items:
+    - concept_id: 3955314 # Anti-spike (S) antibody present
+      unit_concept_id: 12310002 # AU/mL
+      p: 0.70
+      dist: lognormal # param1 = mu (ln-scale), param2 = sigma
+      param1: 6.8 # ~ median e^6.8 ≈ 900 AU/mL
+      param2: 0.8
+    - concept_id: 3955313 # Anti-nucleocapsid (N) antibody present
+      unit_concept_id: 12310003 # Index
+      p: 0.45
+      dist: lognormal
+      param1: -0.3 # median ~ 0.74
+      param2: 0.9
+    - concept_id: 3955300 # SARS-CoV-2 IgM
+      unit_concept_id: 12310004 # Titer
+      p: 0.30
+      dist: lognormal
+      param1: 1.1
+      param2: 0.7
+    - concept_id: 3955297 # SARS-CoV-2 IgA
+      unit_concept_id: 12310001 # U/mL
+      p: 0.35
+      dist: lognormal
+      param1: 3.0
+      param2: 0.8
+
+# Broad condition mix from your earlier lists (independent draws)
+condition:
+  enabled: true
+  items:
+    # Metabolic / cardiovascular
+    - concept_id: 201826 # Type 2 diabetes mellitus
+      p: 0.12
+    - concept_id: 255573 # Hypertension
+      p: 0.28
+    - concept_id: 316866 # Hyperlipidemia
+      p: 0.22
+    - concept_id: 192671 # Coronary artery disease
+      p: 0.07
+    - concept_id: 319049 # Heart failure
+      p: 0.04
+    - concept_id: 192279 # Atrial fibrillation
+      p: 0.03
+    - concept_id: 195771 # Stroke
+      p: 0.02
+    # Renal / CKD spectrum
+    - concept_id: 198185 # Chronic renal failure / CKD (broad)
+      p: 0.10
+    - concept_id: 443597 # CKD stage 3
+      p: 0.05
+    - concept_id: 443612 # CKD stage 4
+      p: 0.02
+    - concept_id: 443611 # CKD stage 5
+      p: 0.01
+    - concept_id: 193782 # End-stage renal disease
+      p: 0.008
+    - concept_id: 443961 # Anemia of chronic renal failure
+      p: 0.02
+    # Respiratory
+    - concept_id: 319835 # Asthma
+      p: 0.10
+    - concept_id: 321588 # COPD
+      p: 0.06
+    - concept_id: 36684857 # Lung cancer (placeholder from your list)
+      p: 0.004
+    # General / immune / endocrine / rheum
+    - concept_id: 262 # Hypothyroidism
+      p: 0.08
+    - concept_id: 135048 # Rheumatoid arthritis
+      p: 0.02
+    - concept_id: 444100 # Psoriasis
+      p: 0.02
+    # GI / liver
+    - concept_id: 317009 # GERD
+      p: 0.12
+    - concept_id: 4013072 # NAFLD
+      p: 0.05
+    # Neuro / psych / pain
+    - concept_id: 433736 # Depression
+      p: 0.14
+    - concept_id: 441840 # Anxiety disorder
+      p: 0.16
+    - concept_id: 254761 # Migraine
+      p: 0.10
+    - concept_id: 443883 # Chronic pain
+      p: 0.07
+    # Musculoskeletal / bone
+    - concept_id: 4182210 # Osteoarthritis
+      p: 0.18
+    - concept_id: 4182215 # Osteoporosis
+      p: 0.05
+    # Weight / sleep / vitamin
+    - concept_id: 4112349 # Obesity
+      p: 0.22
+    - concept_id: 45757363 # Sleep apnea
+      p: 0.10
+    - concept_id: 40480290 # Vitamin D deficiency
+      p: 0.12
+    # Infectious / COVID history
+    - concept_id: 436409 # Viral upper respiratory infection
+      p: 0.12
+    - concept_id: 375557 # Pneumonia
+      p: 0.03
+    - concept_id: 40484648 # COVID-19 (history) (mock)
+      p: 0.15
+    - concept_id: 36712854 # Long COVID / Post-acute COVID-19 (mock)
+      p: 0.05

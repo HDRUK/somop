@@ -1,0 +1,166 @@
+name: bunny-daphne
+
+services:
+  # --- Dataset 1: COVID-19 Antibody CKD ---
+  covid-ckd-a:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop1
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: a6c4f998-b837-4177-8e42-b941433abf44
+
+  covid-ckd-b:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop1
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: b
+
+      COLLECTION_ID: a6c4f998-b837-4177-8e42-b941433abf44
+
+  # --- Dataset 2: Various Conditions ---
+  conditions-a:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop2
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: 8b9d64b5-c840-426e-bf6f-fdb50fd0f93a
+
+  conditions-b:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop2
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: b
+
+      COLLECTION_ID: 8b9d64b5-c840-426e-bf6f-fdb50fd0f93a
+
+  # --- Dataset 3: SARs-CoV-2 Symptoms ---
+  sars-symptoms-a:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop3
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: accbd4a4-7e37-41e8-93de-eb1a3642e683
+
+  sars-symptoms-b:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop3
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: b
+
+      COLLECTION_ID: accbd4a4-7e37-41e8-93de-eb1a3642e683
+
+  # --- Dataset 4: Antibody + Symptoms ---
+  antibody-symptoms-a:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop4
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: a397a685-cbe2-4424-9c30-a9f37e6f2db7
+
+  antibody-symptoms-b:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: omop4
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
+      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: b
+
+      COLLECTION_ID: a397a685-cbe2-4424-9c30-a9f37e6f2db7

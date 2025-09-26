@@ -1,0 +1,112 @@
+seed: 42
+out_dir: ./out/conditions
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 400000
+  genders:
+    - concept_id: 8507 # male
+      p: 0.48
+    - concept_id: 8532 # female
+      p: 0.52
+
+# Conditions only — broad mix across systems
+condition:
+  enabled: true
+  items:
+    # Metabolic / cardiovascular
+    - concept_id: 201826 # Type 2 diabetes mellitus
+      p: 0.14
+    - concept_id: 255573 # Hypertension
+      p: 0.35
+    - concept_id: 316866 # Hyperlipidemia
+      p: 0.28
+    - concept_id: 192671 # Coronary artery disease
+      p: 0.09
+    - concept_id: 319049 # Heart failure
+      p: 0.05
+    - concept_id: 192279 # Atrial fibrillation
+      p: 0.04
+    - concept_id: 195771 # Stroke
+      p: 0.025
+
+    # Renal / CKD spectrum
+    - concept_id: 198185 # Chronic renal failure / CKD (broad)
+      p: 0.12
+    - concept_id: 443597 # CKD stage 3
+      p: 0.06
+    - concept_id: 443612 # CKD stage 4
+      p: 0.025
+    - concept_id: 443611 # CKD stage 5
+      p: 0.012
+    - concept_id: 193782 # End-stage renal disease
+      p: 0.010
+    - concept_id: 443961 # Anemia of chronic renal failure
+      p: 0.03
+
+    # Respiratory
+    - concept_id: 319835 # Asthma
+      p: 0.12
+    - concept_id: 321588 # COPD
+      p: 0.08
+    - concept_id: 36684857 # Lung cancer (placeholder)
+      p: 0.005
+
+    # Endocrine / rheum / immune / derm
+    - concept_id: 262 # Hypothyroidism
+      p: 0.10
+    - concept_id: 135048 # Rheumatoid arthritis
+      p: 0.025
+    - concept_id: 444100 # Psoriasis
+      p: 0.03
+
+    # GI / liver
+    - concept_id: 317009 # GERD
+      p: 0.16
+    - concept_id: 4013072 # NAFLD
+      p: 0.06
+
+    # Neuro / psych / pain
+    - concept_id: 433736 # Depression
+      p: 0.18
+    - concept_id: 441840 # Anxiety disorder
+      p: 0.20
+    - concept_id: 254761 # Migraine
+      p: 0.12
+    - concept_id: 443883 # Chronic pain
+      p: 0.09
+
+    # Musculoskeletal / bone
+    - concept_id: 4182210 # Osteoarthritis
+      p: 0.22
+    - concept_id: 4182215 # Osteoporosis
+      p: 0.06
+
+    # Weight / sleep / vitamin
+    - concept_id: 4112349 # Obesity
+      p: 0.28
+    - concept_id: 45757363 # Sleep apnea
+      p: 0.12
+    - concept_id: 40480290 # Vitamin D deficiency
+      p: 0.16
+
+    # Infectious / respiratory history
+    - concept_id: 436409 # Viral upper respiratory infection
+      p: 0.16
+    - concept_id: 375557 # Pneumonia
+      p: 0.05
+    - concept_id: 40484648 # COVID-19 (history) (mock)
+      p: 0.18
+    - concept_id: 36712854 # Long COVID / Post-acute COVID-19 (mock)
+      p: 0.06
+
+# Explicitly disable other domains
+drug_exposure:
+  enabled: false
+
+observation:
+  enabled: false
+
+measurement:
+  enabled: false
