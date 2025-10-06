@@ -101,12 +101,6 @@ def generate(
     out_dir = cfg.out_dir
     ensure_dir(out_dir)
 
-    script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path)
-    file_path = os.path.join(script_dir, "..", "data", "CONCEPT.csv")
-    dest_path = os.path.join(out_dir, "CONCEPT.csv")
-    shutil.copy(file_path, dest_path)
-
     paths = {
         "person": os.path.join(out_dir, "PERSON.csv"),
         "drug": os.path.join(out_dir, "DRUG_EXPOSURE.csv"),
