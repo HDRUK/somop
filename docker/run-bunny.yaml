@@ -20,7 +20,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: a
 
-      COLLECTION_ID: a6c4f998-b837-4177-8e42-b941433abf44
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000000
 
   covid-ckd-b:
     image: ghcr.io/health-informatics-uon/hutch/bunny:edge
@@ -40,7 +40,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: b
 
-      COLLECTION_ID: a6c4f998-b837-4177-8e42-b941433abf44
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000000
 
   # --- Dataset 2: Various Conditions ---
   conditions-a:
@@ -61,7 +61,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: a
 
-      COLLECTION_ID: 8b9d64b5-c840-426e-bf6f-fdb50fd0f93a
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000001
 
   conditions-b:
     image: ghcr.io/health-informatics-uon/hutch/bunny:edge
@@ -81,7 +81,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: b
 
-      COLLECTION_ID: 8b9d64b5-c840-426e-bf6f-fdb50fd0f93a
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000001
 
   # --- Dataset 3: SARs-CoV-2 Symptoms ---
   sars-symptoms-a:
@@ -102,7 +102,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: a
 
-      COLLECTION_ID: accbd4a4-7e37-41e8-93de-eb1a3642e683
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000002
 
   sars-symptoms-b:
     image: ghcr.io/health-informatics-uon/hutch/bunny:edge
@@ -122,7 +122,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: b
 
-      COLLECTION_ID: accbd4a4-7e37-41e8-93de-eb1a3642e683
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000002
 
   # --- Dataset 4: Antibody + Symptoms ---
   antibody-symptoms-a:
@@ -143,7 +143,7 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: a
 
-      COLLECTION_ID: a397a685-cbe2-4424-9c30-a9f37e6f2db7
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000003
 
   antibody-symptoms-b:
     image: ghcr.io/health-informatics-uon/hutch/bunny:edge
@@ -163,4 +163,4 @@ services:
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: b
 
-      COLLECTION_ID: a397a685-cbe2-4424-9c30-a9f37e6f2db7
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000003

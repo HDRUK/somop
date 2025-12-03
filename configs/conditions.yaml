@@ -88,7 +88,7 @@ condition:
       p: 0.28
     - concept_id: 45757363 # Sleep apnea
       p: 0.12
-    - concept_id: 40480290 # Vitamin D deficiency
+    - concept_id: 436070 # Vitamin D deficiency
       p: 0.16
 
     # Infectious / respiratory history
