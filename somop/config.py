@@ -25,6 +25,11 @@ class GenderProb(BaseModel):
     p: confloat(ge=0, le=1)
 
 
+class ConceptProb(BaseModel):
+    concept_id: int
+    p: float
+
+
 class PersonConfig(BaseModel):
     enabled: bool = True
     n_people: conint(ge=1) = 10000
@@ -33,6 +38,14 @@ class PersonConfig(BaseModel):
             GenderProb(concept_id=8507, p=0.5),  # male
             GenderProb(concept_id=8532, p=0.5),  # female
         ]
+    )
+
+    ethnicities: List[ConceptProb] = Field(
+        default_factory=lambda: [ConceptProb(concept_id=0, p=1.0)]
+    )
+
+    races: List[ConceptProb] = Field(
+        default_factory=lambda: [ConceptProb(concept_id=0, p=1.0)]
     )
 
     age_dist: Optional[Literal["normal", "lognormal", "uniform"]] = "normal"

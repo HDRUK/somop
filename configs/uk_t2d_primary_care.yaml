@@ -1,0 +1,209 @@
+seed: 44
+out_dir: ./out/uk_t2d_primary_care
+chunk_size: 10000
+person:
+  enabled: true
+  n_people: 200000
+  genders:
+  - concept_id: 8507
+    p: 0.49
+  - concept_id: 8532
+    p: 0.51
+condition:
+  enabled: true
+  items:
+  - concept_id: 201826
+    concept_name: Type 2 diabetes mellitus
+    p: 0.1
+  - concept_id: 320128
+    concept_name: Hypertensive disorder
+    p: 0.26
+  - concept_id: 432867
+    concept_name: Hyperlipidemia
+    p: 0.3
+  - concept_id: 438170
+    concept_name: Obesity
+    p: 0.26
+  - concept_id: 40481087
+    concept_name: Chronic kidney disease
+    p: 0.06
+  - concept_id: 40481089
+    concept_name: Diabetic kidney disease
+    p: 0.03
+  - concept_id: 321588
+    concept_name: Chronic obstructive pulmonary disease
+    p: 0.07
+  - concept_id: 4148906
+    concept_name: Ischemic heart disease
+    p: 0.08
+  - concept_id: 312327
+    concept_name: History of myocardial infarction
+    p: 0.03
+  - concept_id: 381591
+    concept_name: Cerebrovascular disease
+    p: 0.03
+  - concept_id: 255848
+    concept_name: Peripheral arterial disease
+    p: 0.02
+  - concept_id: 45768826
+    concept_name: Nonalcoholic fatty liver disease
+    p: 0.04
+drug_exposure:
+  enabled: true
+  items:
+  - concept_id: 99930001
+    concept_name: Metformin
+    p: 0.65
+  - concept_id: 99930002
+    concept_name: SGLT2 inhibitor
+    p: 0.25
+  - concept_id: 99930003
+    concept_name: DPP-4 inhibitor
+    p: 0.2
+  - concept_id: 99930004
+    concept_name: GLP-1 receptor agonist
+    p: 0.12
+  - concept_id: 99930005
+    concept_name: Sulfonylurea
+    p: 0.25
+  - concept_id: 99930006
+    concept_name: Basal insulin
+    p: 0.18
+  - concept_id: 99930007
+    concept_name: Statin
+    p: 0.7
+  - concept_id: 99930008
+    concept_name: ACE inhibitor or ARB
+    p: 0.6
+  - concept_id: 99930009
+    concept_name: Antiplatelet (e.g., aspirin)
+    p: 0.3
+  - concept_id: 99930010
+    concept_name: Smoking cessation therapy
+    p: 0.06
+measurement:
+  enabled: true
+  items:
+  - concept_id: 3004410
+    concept_name: HbA1c
+    unit_concept_id: 100080
+    unit_name: mmol/mol
+    p: 0.8
+    dist: normal
+    param1: 55
+    param2: 13
+  - concept_id: 3030430
+    concept_name: Fasting plasma glucose
+    unit_concept_id: 100040
+    unit_name: mmol/L
+    p: 0.55
+    dist: normal
+    param1: 7.8
+    param2: 2.1
+  - concept_id: 3016723
+    concept_name: eGFR
+    unit_concept_id: 100090
+    unit_name: mL/min/1.73m2
+    p: 0.75
+    dist: normal
+    param1: 68
+    param2: 19
+  - concept_id: 3024128
+    concept_name: Urine albumin/creatinine ratio
+    unit_concept_id: 100100
+    unit_name: mg/mmol
+    p: 0.45
+    dist: normal
+    param1: 4.0
+    param2: 5.0
+  - concept_id: 3019897
+    concept_name: LDL cholesterol
+    unit_concept_id: 100040
+    unit_name: mmol/L
+    p: 0.7
+    dist: normal
+    param1: 2.4
+    param2: 0.9
+  - concept_id: 3007070
+    concept_name: HDL cholesterol
+    unit_concept_id: 100040
+    unit_name: mmol/L
+    p: 0.7
+    dist: normal
+    param1: 1.2
+    param2: 0.3
+  - concept_id: 3020460
+    concept_name: Triglycerides
+    unit_concept_id: 100040
+    unit_name: mmol/L
+    p: 0.7
+    dist: normal
+    param1: 1.8
+    param2: 0.9
+  - concept_id: 3024561
+    concept_name: Total cholesterol
+    unit_concept_id: 100040
+    unit_name: mmol/L
+    p: 0.7
+    dist: normal
+    param1: 4.5
+    param2: 1.0
+  - concept_id: 3004249
+    concept_name: Systolic blood pressure
+    unit_concept_id: 100030
+    unit_name: mmHg
+    p: 0.85
+    dist: normal
+    param1: 136
+    param2: 17
+  - concept_id: 3004327
+    concept_name: Diastolic blood pressure
+    unit_concept_id: 100030
+    unit_name: mmHg
+    p: 0.85
+    dist: normal
+    param1: 82
+    param2: 11
+  - concept_id: 3013762
+    concept_name: Body mass index
+    unit_concept_id: 100020
+    unit_name: kg/m2
+    p: 0.85
+    dist: normal
+    param1: 29
+    param2: 6
+  - concept_id: 3025315
+    concept_name: Body weight
+    unit_concept_id: 100010
+    unit_name: kg
+    p: 0.85
+    dist: normal
+    param1: 82
+    param2: 18
+observation:
+  enabled: true
+  items:
+  - concept_id: 99921001
+    concept_name: Current smoker
+    p: 0.17
+  - concept_id: 99921002
+    concept_name: Ex-smoker
+    p: 0.35
+  - concept_id: 99921003
+    concept_name: Never smoker
+    p: 0.45
+  - concept_id: 99931001
+    concept_name: Annual foot check done
+    p: 0.75
+  - concept_id: 99931002
+    concept_name: Retinopathy screening attended
+    p: 0.7
+  - concept_id: 99931003
+    concept_name: Documented hypoglycaemia (past 12m)
+    p: 0.1
+  - concept_id: 99931004
+    concept_name: Diabetes education offered
+    p: 0.65
+  - concept_id: 99931005
+    concept_name: 'Vaccinated: influenza (current season)'
+    p: 0.62

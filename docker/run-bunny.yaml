@@ -164,3 +164,23 @@ services:
       TASK_API_TYPE: b
 
       COLLECTION_ID: 00000000-0000-0000-0000-000000000003
+
+  wide-b:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: wide
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: test-client-1
+      TASK_API_PASSWORD: test-secret-1
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: 00000000-0000-0000-0000-000000000003

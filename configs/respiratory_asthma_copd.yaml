@@ -1,0 +1,87 @@
+seed: 202
+out_dir: ./out/uk_respiratory_asthma_copd
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 180000
+  genders:
+    - concept_id: 8507  # male
+      p: 0.48
+    - concept_id: 8532  # female
+      p: 0.52
+
+# A UK respiratory cohort spanning asthma and COPD with inhaler therapies, smoking, and spirometry.
+condition:
+  enabled: true
+  items:
+    - concept_id: 319835  # Asthma (from your set)
+      p: 0.15
+    - concept_id: 321588  # COPD (from your set)
+      p: 0.09
+    - concept_id: 254761  # Chronic cough (proxy symptom from your set)
+      p: 0.20
+    - concept_id: 375557  # Pneumonia history (from your set)
+      p: 0.04
+
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 99920001  # SABA inhaler (e.g., salbutamol)
+      p: 0.40
+    - concept_id: 99920002  # ICS inhaler (e.g., budesonide/beclometasone)
+      p: 0.28
+    - concept_id: 99920003  # ICS/LABA combination (e.g., budesonide/formoterol)
+      p: 0.20
+    - concept_id: 99920004  # LAMA (e.g., tiotropium)
+      p: 0.12
+    - concept_id: 99920005  # Oral corticosteroid burst
+      p: 0.08
+    - concept_id: 99920006  # Smoking cessation therapy (e.g., varenicline/NRT)
+      p: 0.05
+
+measurement:
+  enabled: true
+  items:
+    - concept_id: 40010001   # FEV1 (pre-bronchodilator) (placeholder)
+      unit_concept_id: 100060 # litres (placeholder unit)
+      p: 0.60
+      dist: normal
+      param1: 2.3
+      param2: 0.7
+    - concept_id: 40010002   # FVC (pre-bronchodilator) (placeholder)
+      unit_concept_id: 100060 # litres
+      p: 0.60
+      dist: normal
+      param1: 3.1
+      param2: 0.8
+    - concept_id: 40010003   # FEV1/FVC ratio (calculated; store as measurement if available)
+      unit_concept_id: 100070 # ratio
+      p: 0.55
+      dist: normal
+      param1: 0.72
+      param2: 0.12
+    - concept_id: 3004249    # Systolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg
+      p: 0.70
+      dist: normal
+      param1: 132
+      param2: 16
+    - concept_id: 3004327    # Diastolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg
+      p: 0.70
+      dist: normal
+      param1: 80
+      param2: 11
+
+observation:
+  enabled: true
+  items:
+    - concept_id: 99921001  # Current smoker
+      p: 0.22
+    - concept_id: 99921002  # Ex-smoker
+      p: 0.28
+    - concept_id: 99921003  # Never smoker
+      p: 0.45
+    - concept_id: 99921004  # Documented exacerbation in last 12 months
+      p: 0.12

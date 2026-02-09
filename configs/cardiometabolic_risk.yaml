@@ -1,0 +1,114 @@
+seed: 101
+out_dir: ./out/uk_cardiometabolic_risk
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 250000
+  genders:
+    - concept_id: 8507  # male
+      p: 0.49
+    - concept_id: 8532  # female
+      p: 0.51
+
+# A UK primary-care cardiometabolic cohort:
+# T2DM + hypertension + hyperlipidaemia ± CKD, with common therapies and labs (HbA1c in mmol/mol).
+condition:
+  enabled: true
+  items:
+    # Core cardiometabolic
+    - concept_id: 201826   # Type 2 diabetes mellitus (from your set)
+      p: 0.12
+    - concept_id: 255573   # Hypertension (from your set)
+      p: 0.33
+    - concept_id: 316866   # Hyperlipidemia (from your set)
+      p: 0.26
+    - concept_id: 198185   # Chronic kidney disease (broad; from your set)
+      p: 0.10
+    - concept_id: 443597   # CKD stage 3 (from your set)
+      p: 0.05
+    - concept_id: 192671   # Coronary artery disease (from your set)
+      p: 0.08
+    - concept_id: 319049   # Heart failure (from your set)
+      p: 0.04
+
+# Common cardiometabolic medications (RxNorm ingredient-level; use as selection weights).
+# The concept_ids here are placeholders; swap for your canonical OMOP concepts as needed.
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 99900001  # Metformin
+      p: 0.30
+    - concept_id: 99900002  # SGLT2 inhibitor (e.g., dapagliflozin)
+      p: 0.12
+    - concept_id: 99900003  # GLP-1 RA (e.g., semaglutide)
+      p: 0.06
+    - concept_id: 99900004  # ACE inhibitor (e.g., ramipril)
+      p: 0.28
+    - concept_id: 99900005  # ARB (e.g., losartan)
+      p: 0.18
+    - concept_id: 99900006  # Statin (e.g., atorvastatin)
+      p: 0.40
+    - concept_id: 99900007  # Ezetimibe
+      p: 0.08
+    - concept_id: 99900008  # Aspirin (cardiovascular prevention)
+      p: 0.15
+
+# Key primary care measurements with UK-preferred units.
+# Dist meanings:
+#   normal:   param1 = mean, param2 = sd
+#   lognormal:param1 = mu (ln-scale), param2 = sigma (ln-scale)
+#   uniform:  param1 = low, param2 = high
+measurement:
+  enabled: true
+  items:
+    - concept_id: 3004410     # HbA1c (placeholder concept)
+      unit_concept_id: 100010 # mmol/mol (placeholder unit)
+      p: 0.70
+      dist: normal
+      param1: 58   # mean 58 mmol/mol (~7.5%)
+      param2: 14
+    - concept_id: 3005678     # LDL cholesterol (placeholder concept)
+      unit_concept_id: 100020 # mmol/L (placeholder unit)
+      p: 0.65
+      dist: lognormal
+      param1: 0.0  # median ~1.00 mmol/L; right tail for dyslipidaemia
+      param2: 0.45
+    - concept_id: 3004249     # Systolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg (placeholder unit)
+      p: 0.85
+      dist: normal
+      param1: 135
+      param2: 15
+    - concept_id: 3004327     # Diastolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg
+      p: 0.85
+      dist: normal
+      param1: 82
+      param2: 10
+    - concept_id: 3006923     # eGFR (CKD-EPI) (placeholder concept)
+      unit_concept_id: 100040 # mL/min/1.73m2 (placeholder unit)
+      p: 0.60
+      dist: lognormal
+      param1: 4.2  # median ~66; long left tail for CKD
+      param2: 0.35
+    - concept_id: 3027018     # UACR – urine albumin:creatinine ratio (placeholder concept)
+      unit_concept_id: 100050 # mg/mmol (placeholder unit)
+      p: 0.40
+      dist: lognormal
+      param1: 1.2
+      param2: 1.0
+
+# Lifestyle / risk factor observations (smoking status etc.).
+# Use your preferred SNOMED/OMOP concepts here if available.
+observation:
+  enabled: true
+  items:
+    - concept_id: 99910001  # Current smoker
+      p: 0.15
+    - concept_id: 99910002  # Ex-smoker
+      p: 0.25
+    - concept_id: 99910003  # Never smoker
+      p: 0.55
+    - concept_id: 99910004  # Family history of premature CVD
+      p: 0.10

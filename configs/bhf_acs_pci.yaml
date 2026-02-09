@@ -1,0 +1,131 @@
+seed: 303
+out_dir: ./out/uk_bhf_acs_pci
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 220000
+  genders:
+    - concept_id: 8507 # male
+      p: 0.56
+    - concept_id: 8532 # female
+      p: 0.44
+
+# British Heart Foundation–style cohort:
+# Acute coronary syndromes (STEMI/NSTEMI/UA), coronary interventions (PCI/CABG),
+# secondary prevention therapies, key labs (troponin, lipids, renal), and risk factors.
+condition:
+  enabled: true
+  items:
+    # Coronary disease core (reuse your existing CAD + HF + common comorbids)
+    - concept_id: 192671 # Coronary artery disease (existing in your file)
+      p: 0.22
+    - concept_id: 319049 # Heart failure (existing in your file)
+      p: 0.07
+    - concept_id: 201826 # Type 2 diabetes mellitus (existing)
+      p: 0.18
+    - concept_id: 255573 # Hypertension (existing)
+      p: 0.45
+    - concept_id: 316866 # Hyperlipidaemia (existing)
+      p: 0.40
+    - concept_id: 198185 # Chronic kidney disease (broad; existing)
+      p: 0.12
+
+    # ACS phenotypes (placeholders — swap to your preferred OMOP concepts)
+    - concept_id: 35610091 # Acute myocardial infarction (AMI) — any
+      p: 0.10
+    - concept_id: 4296653 # Acute ST segment elevation myocardial infarction
+      p: 0.06
+    - concept_id: 36712982 # Unstable angina
+      p: 0.03
+    - concept_id: 4310996 # Ischaemic stroke/TIA history
+      p: 0.03
+
+drug_exposure:
+  enabled: true
+  items:
+    # In-hospital / discharge meds (RxNorm ingredient-level placeholders)
+    - concept_id: 4306886 # Aspirin
+      p: 0.70
+    - concept_id: 37160622 # P2Y12 inhibitor (clopidogrel/ticagrelor/prasugrel)
+      p: 0.60
+    - concept_id: 4248105 # High-intensity statin (e.g., atorvastatin 80mg)
+      p: 0.72
+    - concept_id: 4189269 # Beta-blocker
+      p: 0.55
+    - concept_id: 4052720 # ACE inhibitor
+      p: 0.45
+
+# Dist meanings:
+#   normal:   param1 = mean,   param2 = sd
+#   lognormal:param1 = mu(ln), param2 = sigma(ln)
+#   uniform:  param1 = low,    param2 = high
+measurement:
+  enabled: true
+  items:
+    - concept_id: 93000001 # High-sensitivity troponin I/T (placeholder)
+      unit_concept_id: 100080 # ng/L (placeholder unit)
+      p: 0.75
+      dist: lognormal
+      param1: 3.8 # heavy right tail in ACS
+      param2: 1.4
+    - concept_id: 3005678 # LDL cholesterol (placeholder from earlier)
+      unit_concept_id: 100020 # mmol/L
+      p: 0.70
+      dist: lognormal
+      param1: 0.2
+      param2: 0.5
+    - concept_id: 3004249 # Systolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg
+      p: 0.85
+      dist: normal
+      param1: 136
+      param2: 18
+    - concept_id: 3004327 # Diastolic blood pressure (placeholder concept)
+      unit_concept_id: 100030 # mmHg
+      p: 0.85
+      dist: normal
+      param1: 82
+      param2: 11
+    - concept_id: 3006923 # eGFR (CKD-EPI) (placeholder concept)
+      unit_concept_id: 100040 # mL/min/1.73m2
+      p: 0.65
+      dist: lognormal
+      param1: 4.1
+      param2: 0.40
+    - concept_id: 93000002 # Serum creatinine (placeholder)
+      unit_concept_id: 100090 # µmol/L (UK)
+      p: 0.70
+      dist: lognormal
+      param1: 4.6
+      param2: 0.35
+    - concept_id: 93000003 # Total cholesterol (placeholder)
+      unit_concept_id: 100020 # mmol/L
+      p: 0.70
+      dist: lognormal
+      param1: 1.2
+      param2: 0.35
+    - concept_id: 93000004 # BMI (calculated; store as measurement if needed)
+      unit_concept_id: 100100 # kg/m2
+      p: 0.80
+      dist: normal
+      param1: 28.5
+      param2: 5.2
+
+observation:
+  enabled: true
+  items:
+    - concept_id: 94000001 # Current smoker
+      p: 0.18
+    - concept_id: 94000002 # Ex-smoker
+      p: 0.32
+    - concept_id: 94000003 # Never smoker
+      p: 0.45
+    - concept_id: 94000004 # Family history of premature CVD
+      p: 0.08
+    - concept_id: 94000005 # Killip class >1 documented (AMI severity proxy)
+      p: 0.05
+    - concept_id: 94000006 # 30-day readmission recorded
+      p: 0.10
+    - concept_id: 94000007 # 1-year MACE (composite) flag
+      p: 0.06

@@ -23,7 +23,7 @@ services:
       SCHEMA_NAME: public
       DATA_DIR: /data
     volumes:
-      - ./out/ckd_antibodies:/data:ro
+      - ./data/ckd_antibodies:/data:ro
 
   omop2:
     image: ghcr.io/health-informatics-uon/omop-lite:latest
@@ -37,7 +37,7 @@ services:
       SCHEMA_NAME: public
       DATA_DIR: /data
     volumes:
-      - ./out/conditions:/data:ro
+      - ./data/conditions:/data:ro
 
   omop3:
     image: ghcr.io/health-informatics-uon/omop-lite:latest
@@ -51,7 +51,7 @@ services:
       SCHEMA_NAME: public
       DATA_DIR: /data
     volumes:
-      - ./out/symptoms:/data:ro
+      - ./data/symptoms:/data:ro
 
   omop4:
     image: ghcr.io/health-informatics-uon/omop-lite:latest
@@ -65,4 +65,18 @@ services:
       SCHEMA_NAME: public
       DATA_DIR: /data
     volumes:
-      - ./out/more_symptoms:/data:ro
+      - ./data/more_symptoms:/data:ro
+
+  widerDataset:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_NAME: wide
+      DB_PASSWORD: postgres
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./data/wider_dataset:/data:ro

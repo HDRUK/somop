@@ -136,9 +136,19 @@ def generate(
         # PERSON
         if cfg.person.enabled:
             rng = np.random.default_rng()
+
             genders = [g.concept_id for g in cfg.person.genders]
-            probs = [g.p for g in cfg.person.genders]
-            gvals = _choice_with_probs(genders, probs, size)
+            gprobs = [g.p for g in cfg.person.genders]
+            gvals = _choice_with_probs(genders, gprobs, size)
+
+            eths = [e.concept_id for e in cfg.person.ethnicities]
+            eth_probs = [e.p for e in cfg.person.ethnicities]
+            evals = _choice_with_probs(eths, eth_probs, size)
+
+            races = [e.concept_id for e in cfg.person.races]
+            race_probs = [e.p for e in cfg.person.races]
+            rvals = _choice_with_probs(races, race_probs, size)
+
             person_ids = np.arange(start, start + size, dtype=int)
 
             ages_years = _sample_ages(
@@ -163,10 +173,10 @@ def generate(
                     year_of_birth=d.year,
                     month_of_birth=d.month,
                     day_of_birth=d.day,
-                    race_concept_id=0,
-                    ethnicity_concept_id=0,
+                    race_concept_id=int(r),
+                    ethnicity_concept_id=int(e),
                 )
-                for pid, g, d in zip(person_ids, gvals, birthdates)
+                for pid, g, e, r, d in zip(person_ids, gvals, evals, rvals, birthdates)
             ]
 
             person_df = pd.DataFrame(

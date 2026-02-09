@@ -1,0 +1,29 @@
+seed: 42
+out_dir: ./data/simple
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 2750
+  genders:
+    - concept_id: 8507 # male
+      p: 0.28
+    - concept_id: 8532 # female
+      p: 0.72
+  races:
+    - concept_id: 8527 #white
+      p: 0.9
+    - concept_id: 38003600 # african
+      p: 0.05
+    - concept_id: 38003616 # arab
+      p: 0.05
+
+drug_exposure:
+  enabled: true
+  items:
+    - concept_id: 3955321 # Pfizer - SARS-CoV-2 vaccine
+      p: 1.0
+    - concept_id: 3955320 # Moderna - SARS-CoV-2 vaccine
+      p: 0.20
+    - concept_id: 3955322 # Oxford/AstraZeneca - AZD1222
+      p: 0.10
