@@ -158,12 +158,32 @@ services:
       BUNNY_LOGGER_LEVEL: DEBUG
 
       TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
-      TASK_API_USERNAME: ada604e0a5102c99e1cc989a97ae5da7cecd1edb01ca9d4b76be625dacad1107
-      TASK_API_PASSWORD: 00b261878aaf222f23becaec888b8b2907488bf3b4cfc5088482c68a841a6eb8
+      TASK_API_USERNAME: a764c0ef5c5c528524c9d3818726894e28cd271d64ade0d6df78d8bcfb3f0c32
+      TASK_API_PASSWORD: 93b872d70d36d65cdf52ff2b3b3b202b554c1b950400e03de010e5e73f90b96b
       TASK_API_ENFORCE_HTTPS: false
       TASK_API_TYPE: b
 
-      COLLECTION_ID: 00000000-0000-0000-0000-000000000003
+      COLLECTION_ID: 99701bb3-6059-47e3-b97a-04af88daff4f
+
+  wide-a:
+    image: ghcr.io/health-informatics-uon/hutch/bunny:edge
+    environment:
+      DATASOURCE_DB_USERNAME: postgres
+      DATASOURCE_DB_PASSWORD: postgres
+      DATASOURCE_DB_DATABASE: wide
+      DATASOURCE_DB_DRIVERNAME: postgresql
+      DATASOURCE_DB_SCHEMA: public
+      DATASOURCE_DB_HOST: host.docker.internal
+      DATASOURCE_DB_PORT: 5435
+      BUNNY_LOGGER_LEVEL: DEBUG
+
+      TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
+      TASK_API_USERNAME: a764c0ef5c5c528524c9d3818726894e28cd271d64ade0d6df78d8bcfb3f0c32
+      TASK_API_PASSWORD: 93b872d70d36d65cdf52ff2b3b3b202b554c1b950400e03de010e5e73f90b96b
+      TASK_API_ENFORCE_HTTPS: false
+      TASK_API_TYPE: a
+
+      COLLECTION_ID: 99701bb3-6059-47e3-b97a-04af88daff4f
 
   wide-b:
     image: ghcr.io/health-informatics-uon/hutch/bunny:edge
@@ -178,9 +198,9 @@ services:
       BUNNY_LOGGER_LEVEL: DEBUG
 
       TASK_API_BASE_URL: http://host.docker.internal:8100/api/v1
-      TASK_API_USERNAME: test-client-1
-      TASK_API_PASSWORD: test-secret-1
+      TASK_API_USERNAME: a764c0ef5c5c528524c9d3818726894e28cd271d64ade0d6df78d8bcfb3f0c32
+      TASK_API_PASSWORD: 93b872d70d36d65cdf52ff2b3b3b202b554c1b950400e03de010e5e73f90b96b
       TASK_API_ENFORCE_HTTPS: false
-      TASK_API_TYPE: a
+      TASK_API_TYPE: b
 
-      COLLECTION_ID: 00000000-0000-0000-0000-000000000003
+      COLLECTION_ID: 99701bb3-6059-47e3-b97a-04af88daff4f
