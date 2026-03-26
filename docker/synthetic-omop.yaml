@@ -80,3 +80,17 @@ services:
       DATA_DIR: /data
     volumes:
       - ./data/wider_dataset:/data:ro
+
+  cprd:
+    image: ghcr.io/health-informatics-uon/omop-lite:latest
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_NAME: cprd
+      DB_PASSWORD: postgres
+      SCHEMA_NAME: public
+      DATA_DIR: /data
+    volumes:
+      - ./data/CPRD:/data:ro

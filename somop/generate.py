@@ -18,6 +18,7 @@ from .omop.v5_4_3 import (
     Measurement,
     ConditionOccurrence,
     Observation,
+    ProcedureOccurrence,
 )
 
 
@@ -107,6 +108,7 @@ def generate(
         "meas": os.path.join(out_dir, "MEASUREMENT.csv"),
         "cond": os.path.join(out_dir, "CONDITION_OCCURRENCE.csv"),
         "obs": os.path.join(out_dir, "OBSERVATION.csv"),
+        "proc": os.path.join(out_dir, "PROCEDURE_OCCURRENCE.csv"),
     }
     # clear existing outputs if any
     for p in paths.values():
@@ -117,8 +119,15 @@ def generate(
     chunk = max(1, int(cfg.chunk_size))
     n_chunks = (n + chunk - 1) // chunk
 
-    ids = {"drug": 1, "meas": 1, "cond": 1, "obs": 1}
-    wrote = {"person": False, "drug": False, "meas": False, "cond": False, "obs": False}
+    ids = {"drug": 1, "meas": 1, "cond": 1, "obs": 1, "proc": 1}
+    wrote = {
+        "person": False,
+        "drug": False,
+        "meas": False,
+        "cond": False,
+        "obs": False,
+        "proc": False,
+    }
 
     for c in range(n_chunks):
         start = c * chunk + 1
@@ -343,5 +352,63 @@ def generate(
                 )
                 write_df(meas_df, paths["meas"], header=not wrote["meas"])
                 wrote["meas"] = True
+
+                # PROCEDURE_OCCURRENCE
+
+        # PROCEDURE_OCCURRENCE
+        if cfg.procedure.enabled and cfg.procedure.items:
+            proc_models = []
+            proc_multiplier = 1.0
+            if had_drug.any():
+                proc_multiplier *= float(
+                    cfg.interactions.after_drug_exposure.get("procedure", 1.0)
+                )
+            if had_cond.any():
+                proc_multiplier *= float(
+                    cfg.interactions.after_condition.get("procedure", 1.0)
+                )
+
+            for item in cfg.procedure.items:
+                p_eff = min(1.0, float(item.p) * proc_multiplier)
+                mask = np.random.rand(size) < p_eff
+                if mask.any():
+                    idxs = np.where(mask)[0]
+                    for i in idxs:
+                        proc_models.append(
+                            ProcedureOccurrence(
+                                procedure_occurrence_id=ids["proc"],
+                                person_id=int(start + i),
+                                procedure_concept_id=int(item.concept_id),
+                                procedure_date=random_past_date(),
+                                procedure_type_concept_id=0,
+                                modifier_concept_id=getattr(
+                                    item, "modifier_concept_id", None
+                                ),
+                                quantity=getattr(item, "quantity", 1),
+                                provider_id=getattr(item, "provider_id", None),
+                                visit_occurrence_id=getattr(
+                                    item, "visit_occurrence_id", None
+                                ),
+                                visit_detail_id=getattr(item, "visit_detail_id", None),
+                                procedure_source_value=getattr(
+                                    item, "procedure_source_value", None
+                                ),
+                                procedure_source_concept_id=getattr(
+                                    item, "procedure_source_concept_id", None
+                                ),
+                                modifier_source_value=getattr(
+                                    item, "modifier_source_value", None
+                                ),
+                            )
+                        )
+                        ids["proc"] += 1
+
+            if proc_models:
+                proc_df = pd.DataFrame(
+                    (m.model_dump() for m in proc_models),
+                    columns=list(ProcedureOccurrence.model_fields.keys()),
+                )
+                write_df(proc_df, paths["proc"], header=not wrote["proc"])
+                wrote["proc"] = True
 
     return paths

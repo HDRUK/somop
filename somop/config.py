@@ -73,6 +73,7 @@ class Config(BaseModel):
     measurement: TableConfig = TableConfig()
     condition: TableConfig = TableConfig()
     observation: TableConfig = TableConfig()
+    procedure: TableConfig = TableConfig()
 
     interactions: InteractionEffects = InteractionEffects()
     # global
