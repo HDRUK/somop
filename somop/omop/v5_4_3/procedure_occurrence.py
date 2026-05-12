@@ -10,6 +10,8 @@ class ProcedureOccurrence(BaseModel):
     procedure_concept_id: NonNegativeInt
     procedure_date: date
     procedure_datetime: Optional[datetime] = None
+    procedure_end_date: Optional[date] = None
+    procedure_end_datetime: Optional[datetime] = None
     procedure_type_concept_id: NonNegativeInt
     modifier_concept_id: Optional[NonNegativeInt] = None
     quantity: Optional[int] = None

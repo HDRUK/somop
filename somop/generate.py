@@ -374,33 +374,43 @@ def generate(
                 if mask.any():
                     idxs = np.where(mask)[0]
                     for i in idxs:
-                        proc_models.append(
-                            ProcedureOccurrence(
-                                procedure_occurrence_id=ids["proc"],
-                                person_id=int(start + i),
-                                procedure_concept_id=int(item.concept_id),
-                                procedure_date=random_past_date(),
-                                procedure_type_concept_id=0,
-                                modifier_concept_id=getattr(
-                                    item, "modifier_concept_id", None
-                                ),
-                                quantity=getattr(item, "quantity", 1),
-                                provider_id=getattr(item, "provider_id", None),
-                                visit_occurrence_id=getattr(
-                                    item, "visit_occurrence_id", None
-                                ),
-                                visit_detail_id=getattr(item, "visit_detail_id", None),
-                                procedure_source_value=getattr(
-                                    item, "procedure_source_value", None
-                                ),
-                                procedure_source_concept_id=getattr(
-                                    item, "procedure_source_concept_id", None
-                                ),
-                                modifier_source_value=getattr(
-                                    item, "modifier_source_value", None
-                                ),
-                            )
+                        proc_date = random_past_date()
+                        quantity = getattr(item, "quantity", 1)
+                        if quantity in (None, 0):
+                            quantity = 1
+
+                        po = ProcedureOccurrence(
+                            procedure_occurrence_id=ids["proc"],
+                            person_id=int(start + i),
+                            procedure_concept_id=int(item.concept_id),
+                            procedure_date=proc_date,
+                            procedure_datetime=None,
+                            procedure_end_date=proc_date,
+                            procedure_end_datetime=None,
+                            procedure_type_concept_id=int(
+                                getattr(item, "procedure_type_concept_id", 0)
+                            ),
+                            modifier_concept_id=getattr(
+                                item, "modifier_concept_id", None
+                            ),
+                            quantity=quantity,
+                            provider_id=getattr(item, "provider_id", None),
+                            visit_occurrence_id=getattr(
+                                item, "visit_occurrence_id", None
+                            ),
+                            visit_detail_id=getattr(item, "visit_detail_id", None),
+                            procedure_source_value=getattr(
+                                item, "procedure_source_value", None
+                            ),
+                            procedure_source_concept_id=getattr(
+                                item, "procedure_source_concept_id", None
+                            ),
+                            modifier_source_value=getattr(
+                                item, "modifier_source_value", None
+                            ),
                         )
+
+                        proc_models.append(po)
                         ids["proc"] += 1
 
             if proc_models:
