@@ -15,7 +15,103 @@ def _parse_db_url(url: str) -> dict:
     }
 
 
-def build_compose(
+def build_load_compose(
+    *,
+    db_name: str,
+    db_password: str,
+    data_dir: str,
+    db_port: Optional[int] = None,
+    db_url: Optional[str] = None,
+    drop_db: bool = True,
+) -> dict:
+    abs_data_dir = os.path.abspath(data_dir)
+    services = {}
+
+    if db_url:
+        conn = _parse_db_url(db_url)
+        db_host = conn["host"]
+        db_conn_port = conn["port"]
+        db_user = conn["user"]
+        db_password = conn["password"]
+        db_name = conn["dbname"]
+
+        if drop_db:
+            terminate = (
+                f"psql -h {db_host} -p {db_conn_port} -U {db_user} -d postgres -c "
+                f"\"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                f"WHERE datname='{db_name}' AND pid <> pg_backend_pid();\""
+            )
+            init_cmd = (
+                f"{terminate} && "
+                f"dropdb -h {db_host} -p {db_conn_port} -U {db_user} --if-exists {db_name} && "
+                f"createdb -h {db_host} -p {db_conn_port} -U {db_user} {db_name}"
+            )
+        else:
+            init_cmd = f"createdb -h {db_host} -p {db_conn_port} -U {db_user} {db_name} || true"
+
+        services["init-db"] = {
+            "image": "postgres:16",
+            "environment": {"PGPASSWORD": db_password},
+            "command": ["sh", "-c", init_cmd],
+            "restart": "no",
+        }
+
+        loader = {
+            "image": "ghcr.io/health-informatics-uon/omop-lite:latest",
+            "depends_on": {
+                "init-db": {"condition": "service_completed_successfully"},
+            },
+            "environment": {
+                "DB_HOST": db_host,
+                "DB_PORT": db_conn_port,
+                "DB_USER": db_user,
+                "DB_PASSWORD": db_password,
+                "DB_NAME": db_name,
+                "SCHEMA_NAME": "public",
+                "DATA_DIR": "/data",
+            },
+            "volumes": [f"{abs_data_dir}:/data:ro"],
+        }
+    else:
+        db_service = {
+            "image": "postgres:16",
+            "environment": {
+                "POSTGRES_PASSWORD": db_password,
+                "POSTGRES_USER": "postgres",
+                "POSTGRES_DB": db_name,
+            },
+            "healthcheck": {
+                "test": ["CMD-SHELL", "pg_isready -U postgres"],
+                "interval": "5s",
+                "timeout": "5s",
+                "retries": 10,
+            },
+        }
+        if db_port is not None:
+            db_service["ports"] = [f"{db_port}:5432"]
+        services["db"] = db_service
+
+        loader = {
+            "image": "ghcr.io/health-informatics-uon/omop-lite:latest",
+            "depends_on": {
+                "db": {"condition": "service_healthy"},
+            },
+            "environment": {
+                "DB_HOST": "db",
+                "DB_USER": "postgres",
+                "DB_PASSWORD": db_password,
+                "DB_NAME": db_name,
+                "SCHEMA_NAME": "public",
+                "DATA_DIR": "/data",
+            },
+            "volumes": [f"{abs_data_dir}:/data:ro"],
+        }
+
+    services["loader"] = loader
+    return {"name": f"somop-{db_name}", "services": services}
+
+
+def build_run_compose(
     *,
     db_name: str,
     db_password: str,
@@ -53,6 +149,7 @@ def build_compose(
             )
         else:
             init_cmd = f"createdb -h {db_host} -p {db_conn_port} -U {db_user} {db_name} || true"
+
         services["init-db"] = {
             "image": "postgres:16",
             "environment": {"PGPASSWORD": db_password},
@@ -116,33 +213,20 @@ def build_compose(
         }
 
     services["loader"] = loader
-    services["bunny-a"] = _bunny_service(
-        db_name=db_name,
-        db_host=db_host,
-        db_port=db_conn_port,
-        db_user=db_user,
-        db_password=db_password,
-        api_url=api_url,
-        api_username=api_username,
-        api_password=api_password,
-        collection_id=collection_id,
-        bunny_type="a",
-        bunny_build=bunny_build,
-    )
-    services["bunny-b"] = _bunny_service(
-        db_name=db_name,
-        db_host=db_host,
-        db_port=db_conn_port,
-        db_user=db_user,
-        db_password=db_password,
-        api_url=api_url,
-        api_username=api_username,
-        api_password=api_password,
-        collection_id=collection_id,
-        bunny_type="b",
-        bunny_build=bunny_build,
-    )
-
+    for bunny_type in ("a", "b"):
+        services[f"bunny-{bunny_type}"] = _bunny_service(
+            db_name=db_name,
+            db_host=db_host,
+            db_port=db_conn_port,
+            db_user=db_user,
+            db_password=db_password,
+            api_url=api_url,
+            api_username=api_username,
+            api_password=api_password,
+            collection_id=collection_id,
+            bunny_type=bunny_type,
+            bunny_build=bunny_build,
+        )
     return {"name": f"somop-{db_name}", "services": services}
 
 
