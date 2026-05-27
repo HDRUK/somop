@@ -4,3 +4,6 @@ from .measurement import Measurement
 from .condition_occurrence import ConditionOccurrence
 from .observation import Observation
 from .procedure_occurrence import ProcedureOccurrence
+from .specimen import Specimen
+from .death import Death
+from .location import Location

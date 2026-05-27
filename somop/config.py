@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Dict, List, Optional, Literal
-from pydantic import BaseModel, Field, conint, confloat, validator
+from pydantic import BaseModel, Field, conint, confloat, validator, PositiveInt
 
 
 class Item(BaseModel):
@@ -67,6 +67,33 @@ class InteractionEffects(BaseModel):
     after_condition: Dict[str, float] = Field(default_factory=dict)
 
 
+class DeathConfig(BaseModel):
+    enabled: bool = True
+    p: confloat(ge=0, le=1) = 0.0
+    causes: List[ConceptProb] = Field(default_factory=list)
+    death_type_concept_id: int = 32519  # EHR
+
+
+class LocationItem(BaseModel):
+    location_id: PositiveInt
+    address_1: Optional[str] = None
+    address_2: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    county: Optional[str] = None
+    location_source_value: Optional[str] = None
+    country_concept_id: Optional[int] = None
+    country_source_value: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class LocationConfig(BaseModel):
+    enabled: bool = True
+    items: List[LocationItem] = Field(default_factory=list)
+
+
 class Config(BaseModel):
     person: PersonConfig = PersonConfig()
     drug_exposure: TableConfig = TableConfig()
@@ -74,6 +101,9 @@ class Config(BaseModel):
     condition: TableConfig = TableConfig()
     observation: TableConfig = TableConfig()
     procedure: TableConfig = TableConfig()
+    specimen: TableConfig = TableConfig()
+    death: DeathConfig = DeathConfig()
+    location: LocationConfig = LocationConfig()
 
     interactions: InteractionEffects = InteractionEffects()
     # global

@@ -19,6 +19,9 @@ from .omop.v5_4_3 import (
     ConditionOccurrence,
     Observation,
     ProcedureOccurrence,
+    Specimen,
+    Death,
+    Location,
 )
 
 
@@ -109,6 +112,9 @@ def generate(
         "cond": os.path.join(out_dir, "CONDITION_OCCURRENCE.csv"),
         "obs": os.path.join(out_dir, "OBSERVATION.csv"),
         "proc": os.path.join(out_dir, "PROCEDURE_OCCURRENCE.csv"),
+        "spec": os.path.join(out_dir, "SPECIMEN.csv"),
+        "death": os.path.join(out_dir, "DEATH.csv"),
+        "loc": os.path.join(out_dir, "LOCATION.csv"),
     }
     # clear existing outputs if any
     for p in paths.values():
@@ -119,7 +125,7 @@ def generate(
     chunk = max(1, int(cfg.chunk_size))
     n_chunks = (n + chunk - 1) // chunk
 
-    ids = {"drug": 1, "meas": 1, "cond": 1, "obs": 1, "proc": 1}
+    ids = {"drug": 1, "meas": 1, "cond": 1, "obs": 1, "proc": 1, "spec": 1}
     wrote = {
         "person": False,
         "drug": False,
@@ -127,7 +133,37 @@ def generate(
         "cond": False,
         "obs": False,
         "proc": False,
+        "spec": False,
+        "death": False,
+        "loc": False,
     }
+
+    # LOCATION — static reference table, written once before the chunk loop
+    if cfg.location.enabled and cfg.location.items:
+        loc_models = [
+            Location(
+                location_id=item.location_id,
+                address_1=item.address_1,
+                address_2=item.address_2,
+                city=item.city,
+                state=item.state,
+                zip=item.zip,
+                county=item.county,
+                location_source_value=item.location_source_value,
+                country_concept_id=item.country_concept_id,
+                country_source_value=item.country_source_value,
+                latitude=item.latitude,
+                longitude=item.longitude,
+            )
+            for item in cfg.location.items
+        ]
+        loc_df = pd.DataFrame(
+            (m.model_dump() for m in loc_models),
+            columns=list(Location.model_fields.keys()),
+        )
+        write_df(loc_df, paths["loc"], header=True)
+        wrote["loc"] = True
+        logger.info("LOCATION: wrote %s rows", len(loc_models))
 
     for c in range(n_chunks):
         start = c * chunk + 1
@@ -160,6 +196,15 @@ def generate(
 
             person_ids = np.arange(start, start + size, dtype=int)
 
+            location_ids = (
+                [item.location_id for item in cfg.location.items]
+                if cfg.location.enabled and cfg.location.items
+                else None
+            )
+            lvals = (
+                rng.choice(location_ids, size=size) if location_ids else [None] * size
+            )
+
             ages_years = _sample_ages(
                 size=size,
                 dist=cfg.person.age_dist,
@@ -184,8 +229,9 @@ def generate(
                     day_of_birth=d.day,
                     race_concept_id=int(r),
                     ethnicity_concept_id=int(e),
+                    location_id=int(loc) if loc is not None else None,
                 )
-                for pid, g, e, r, d in zip(person_ids, gvals, evals, rvals, birthdates)
+                for pid, g, e, r, d, loc in zip(person_ids, gvals, evals, rvals, birthdates, lvals)
             ]
 
             person_df = pd.DataFrame(
@@ -420,5 +466,71 @@ def generate(
                 )
                 write_df(proc_df, paths["proc"], header=not wrote["proc"])
                 wrote["proc"] = True
+
+        # SPECIMEN
+        if cfg.specimen.enabled and cfg.specimen.items:
+            spec_models = []
+            for item in cfg.specimen.items:
+                mask = np.random.rand(size) < item.p
+                if not mask.any():
+                    continue
+                idxs = np.where(mask)[0]
+                for i in idxs:
+                    spec_models.append(
+                        Specimen(
+                            specimen_id=ids["spec"],
+                            person_id=int(start + i),
+                            specimen_concept_id=int(item.concept_id),
+                            specimen_date=random_past_date(),
+                            unit_concept_id=getattr(item, "unit_concept_id", None),
+                        )
+                    )
+                    ids["spec"] += 1
+
+            if spec_models:
+                spec_df = pd.DataFrame(
+                    (m.model_dump() for m in spec_models),
+                    columns=list(Specimen.model_fields.keys()),
+                )
+                write_df(spec_df, paths["spec"], header=not wrote["spec"])
+                wrote["spec"] = True
+
+        # DEATH — at most one row per person
+        if cfg.death.enabled and cfg.death.p > 0:
+            death_mask = np.random.rand(size) < cfg.death.p
+            if death_mask.any():
+                death_models = []
+                dead_idxs = np.where(death_mask)[0]
+
+                cause_ids = None
+                cause_weights = None
+                if cfg.death.causes:
+                    cause_ids = [c.concept_id for c in cfg.death.causes]
+                    raw_weights = np.array(
+                        [c.p for c in cfg.death.causes], dtype=float
+                    )
+                    cause_weights = raw_weights / raw_weights.sum()
+
+                for i in dead_idxs:
+                    cause_concept_id = None
+                    if cause_ids is not None:
+                        cause_concept_id = int(
+                            np.random.choice(cause_ids, p=cause_weights)
+                        )
+                    death_models.append(
+                        Death(
+                            person_id=int(start + i),
+                            death_date=random_past_date(),
+                            death_type_concept_id=cfg.death.death_type_concept_id,
+                            cause_concept_id=cause_concept_id,
+                        )
+                    )
+
+                death_df = pd.DataFrame(
+                    (m.model_dump() for m in death_models),
+                    columns=list(Death.model_fields.keys()),
+                )
+                write_df(death_df, paths["death"], header=not wrote["death"])
+                wrote["death"] = True
 
     return paths
