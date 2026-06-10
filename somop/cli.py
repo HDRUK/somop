@@ -4,7 +4,8 @@ import subprocess
 import click
 import yaml
 from .generate import generate as run_generate
-from .compose import build_load_compose, build_run_compose
+from .compose import build_load_compose, build_run_compose, build_multi_compose
+from .config import MultiConfig
 
 
 @click.group()
@@ -261,6 +262,104 @@ def run(
         proc.wait()
     except KeyboardInterrupt:
         click.echo("\nStopping...")
+        subprocess.run(["docker", "compose", "-f", compose_out, "down"])
+        proc.wait()
+
+
+@main.group(help="Generate or run multiple datasets at once from a multi-config YAML.")
+def multi():
+    pass
+
+
+@multi.command(name="generate", help="Generate data for every dataset in a multi-config.")
+@click.option(
+    "--config",
+    "config_path",
+    required=True,
+    type=click.Path(dir_okay=False, readable=True, path_type=str),
+    help="Path to multi-dataset YAML configuration.",
+)
+@click.option(
+    "--concepts",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, path_type=str),
+    help="Path to CONCEPT.csv to copy into each data directory (overrides multi-config value).",
+)
+def multi_generate(config_path, concepts):
+    with open(config_path) as f:
+        raw = yaml.safe_load(f) or {}
+    multi_cfg = MultiConfig(**raw)
+
+    concepts_path = concepts or multi_cfg.concepts
+
+    for entry in multi_cfg.datasets:
+        click.echo(f"\n[{entry.name}] Generating...")
+        paths = run_generate(config=entry.config)
+        data_dir = os.path.dirname(os.path.abspath(paths["person"]))
+        click.echo(f"[{entry.name}] Generated data in: {data_dir}")
+
+        if concepts_path:
+            dest = os.path.join(data_dir, "CONCEPT.csv")
+            shutil.copy2(concepts_path, dest)
+            click.echo(f"[{entry.name}] Copied CONCEPT.csv to: {dest}")
+
+
+@multi.command(name="run", help="Spin up all datasets as a single stack. Ctrl+C stops everything.")
+@click.option(
+    "--config",
+    "config_path",
+    required=True,
+    type=click.Path(dir_okay=False, readable=True, path_type=str),
+    help="Path to multi-dataset YAML configuration.",
+)
+@click.option(
+    "--compose-out",
+    default=None,
+    type=click.Path(dir_okay=False, writable=True, path_type=str),
+    help="Where to write the generated docker-compose file (default: docker-compose.multi.yaml).",
+)
+def multi_run(config_path, compose_out):
+    with open(config_path) as f:
+        raw = yaml.safe_load(f) or {}
+    multi_cfg = MultiConfig(**raw)
+
+    datasets_params = []
+    for entry in multi_cfg.datasets:
+        with open(entry.config) as f:
+            raw_entry = yaml.safe_load(f) or {}
+        data_dir = os.path.abspath(raw_entry.get("out_dir", "."))
+        datasets_params.append({
+            "prefix": entry.name,
+            "db_name": entry.db_name or entry.name,
+            "db_password": entry.db_password or multi_cfg.db_password,
+            "data_dir": data_dir,
+            "collection_id": entry.collection_id,
+            "api_url": multi_cfg.api_url,
+            "api_username": multi_cfg.api_username,
+            "api_password": multi_cfg.api_password,
+            "db_port": entry.db_port,
+            "db_url": entry.db_url,
+            "drop_db": entry.drop_db,
+            "bunny_build": multi_cfg.bunny_build,
+        })
+
+    compose_dict = build_multi_compose(datasets_params)
+
+    if compose_out is None:
+        compose_out = "docker-compose.multi.yaml"
+    with open(compose_out, "w") as f:
+        yaml.dump(compose_dict, f, default_flow_style=False, sort_keys=False)
+    click.echo(f"Wrote docker-compose to: {compose_out}")
+
+    click.echo("Cleaning up any existing containers...")
+    subprocess.run(["docker", "compose", "-f", compose_out, "down"], check=True)
+
+    click.echo(f"Starting multi-stack from: {compose_out}")
+    proc = subprocess.Popen(["docker", "compose", "-f", compose_out, "up", "--build"])
+    try:
+        proc.wait()
+    except KeyboardInterrupt:
+        click.echo("\nStopping all stacks...")
         subprocess.run(["docker", "compose", "-f", compose_out, "down"])
         proc.wait()
 

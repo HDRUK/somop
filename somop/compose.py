@@ -111,8 +111,9 @@ def build_load_compose(
     return {"name": f"somop-{db_name}", "services": services}
 
 
-def build_run_compose(
+def _build_dataset_services(
     *,
+    prefix: str,
     db_name: str,
     db_password: str,
     data_dir: str,
@@ -125,6 +126,12 @@ def build_run_compose(
     drop_db: bool = True,
     bunny_build: Optional[str] = None,
 ) -> dict:
+    """Build the full services dict for one dataset.
+
+    prefix="" → service names are db/loader/bunny-a/bunny-b (single-dataset mode).
+    prefix="foo" → names are db-foo/loader-foo/bunny-a-foo/bunny-b-foo (multi-dataset mode).
+    """
+    sfx = f"-{prefix}" if prefix else ""
     abs_data_dir = os.path.abspath(data_dir)
     services = {}
 
@@ -150,7 +157,7 @@ def build_run_compose(
         else:
             init_cmd = f"createdb -h {db_host} -p {db_conn_port} -U {db_user} {db_name} || true"
 
-        services["init-db"] = {
+        services[f"init-db{sfx}"] = {
             "image": "postgres:16",
             "environment": {"PGPASSWORD": db_password},
             "command": ["sh", "-c", init_cmd],
@@ -160,7 +167,7 @@ def build_run_compose(
         loader = {
             "image": "ghcr.io/health-informatics-uon/omop-lite:latest",
             "depends_on": {
-                "init-db": {"condition": "service_completed_successfully"},
+                f"init-db{sfx}": {"condition": "service_completed_successfully"},
             },
             "environment": {
                 "DB_HOST": db_host,
@@ -174,7 +181,7 @@ def build_run_compose(
             "volumes": [f"{abs_data_dir}:/data:ro"],
         }
     else:
-        db_host = "db"
+        db_host = f"db{sfx}"
         db_conn_port = 5432
         db_user = "postgres"
 
@@ -194,15 +201,15 @@ def build_run_compose(
         }
         if db_port is not None:
             db_service["ports"] = [f"{db_port}:5432"]
-        services["db"] = db_service
+        services[f"db{sfx}"] = db_service
 
         loader = {
             "image": "ghcr.io/health-informatics-uon/omop-lite:latest",
             "depends_on": {
-                "db": {"condition": "service_healthy"},
+                f"db{sfx}": {"condition": "service_healthy"},
             },
             "environment": {
-                "DB_HOST": "db",
+                "DB_HOST": f"db{sfx}",
                 "DB_USER": "postgres",
                 "DB_PASSWORD": db_password,
                 "DB_NAME": db_name,
@@ -212,9 +219,11 @@ def build_run_compose(
             "volumes": [f"{abs_data_dir}:/data:ro"],
         }
 
-    services["loader"] = loader
+    loader_name = f"loader{sfx}"
+    services[loader_name] = loader
+
     for bunny_type in ("a", "b"):
-        services[f"bunny-{bunny_type}"] = _bunny_service(
+        services[f"bunny-{bunny_type}{sfx}"] = _bunny_service(
             db_name=db_name,
             db_host=db_host,
             db_port=db_conn_port,
@@ -226,8 +235,52 @@ def build_run_compose(
             collection_id=collection_id,
             bunny_type=bunny_type,
             bunny_build=bunny_build,
+            loader_service=loader_name,
         )
+    return services
+
+
+def build_run_compose(
+    *,
+    db_name: str,
+    db_password: str,
+    data_dir: str,
+    collection_id: str,
+    api_url: str,
+    api_username: str,
+    api_password: str,
+    db_port: Optional[int] = None,
+    db_url: Optional[str] = None,
+    drop_db: bool = True,
+    bunny_build: Optional[str] = None,
+) -> dict:
+    services = _build_dataset_services(
+        prefix="",
+        db_name=db_name,
+        db_password=db_password,
+        data_dir=data_dir,
+        collection_id=collection_id,
+        api_url=api_url,
+        api_username=api_username,
+        api_password=api_password,
+        db_port=db_port,
+        db_url=db_url,
+        drop_db=drop_db,
+        bunny_build=bunny_build,
+    )
     return {"name": f"somop-{db_name}", "services": services}
+
+
+def build_multi_compose(datasets: list) -> dict:
+    """Build a single compose file for multiple datasets.
+
+    Each item in datasets must be a dict with keys matching _build_dataset_services parameters,
+    plus 'prefix' (the dataset name used for service name namespacing).
+    """
+    all_services = {}
+    for d in datasets:
+        all_services.update(_build_dataset_services(**d))
+    return {"name": "somop-multi", "services": all_services}
 
 
 def _bunny_service(
@@ -243,6 +296,7 @@ def _bunny_service(
     collection_id: str,
     bunny_type: str,
     bunny_build: Optional[str] = None,
+    loader_service: str = "loader",
 ) -> dict:
     image_or_build = (
         {"build": {"context": os.path.abspath(bunny_build)}}
@@ -252,7 +306,7 @@ def _bunny_service(
     return {
         **image_or_build,
         "depends_on": {
-            "loader": {"condition": "service_completed_successfully"},
+            loader_service: {"condition": "service_completed_successfully"},
         },
         "environment": {
             "DATASOURCE_DB_USERNAME": db_user,

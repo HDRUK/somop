@@ -139,6 +139,7 @@ def generate(
     }
 
     # LOCATION — static reference table, written once before the chunk loop
+    location_ids: list = []
     if cfg.location.enabled and cfg.location.items:
         loc_models = [
             Location(
@@ -163,7 +164,14 @@ def generate(
         )
         write_df(loc_df, paths["loc"], header=True)
         wrote["loc"] = True
+        location_ids = [item.location_id for item in cfg.location.items]
         logger.info("LOCATION: wrote %s rows", len(loc_models))
+    elif cfg.location.enabled and cfg.location.prebuilt_file:
+        loc_df = pd.read_csv(cfg.location.prebuilt_file, sep="\t", dtype={"location_id": int})
+        write_df(loc_df, paths["loc"], header=True)
+        wrote["loc"] = True
+        location_ids = loc_df["location_id"].tolist()
+        logger.info("LOCATION: loaded %s rows from %s", len(loc_df), cfg.location.prebuilt_file)
 
     for c in range(n_chunks):
         start = c * chunk + 1
@@ -196,11 +204,6 @@ def generate(
 
             person_ids = np.arange(start, start + size, dtype=int)
 
-            location_ids = (
-                [item.location_id for item in cfg.location.items]
-                if cfg.location.enabled and cfg.location.items
-                else None
-            )
             lvals = (
                 rng.choice(location_ids, size=size) if location_ids else [None] * size
             )

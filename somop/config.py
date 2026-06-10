@@ -92,6 +92,28 @@ class LocationItem(BaseModel):
 class LocationConfig(BaseModel):
     enabled: bool = True
     items: List[LocationItem] = Field(default_factory=list)
+    prebuilt_file: Optional[str] = None  # path to a pre-generated LOCATION CSV
+
+
+class DatasetEntry(BaseModel):
+    name: str
+    config: str
+    collection_id: str
+    db_name: Optional[str] = None
+    db_password: Optional[str] = None
+    db_url: Optional[str] = None
+    db_port: Optional[int] = None
+    drop_db: bool = True
+
+
+class MultiConfig(BaseModel):
+    api_url: str
+    api_username: str
+    api_password: str
+    db_password: str = "postgres"
+    bunny_build: Optional[str] = None
+    concepts: Optional[str] = None
+    datasets: List[DatasetEntry]
 
 
 class Config(BaseModel):

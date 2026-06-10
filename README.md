@@ -116,6 +116,49 @@ somop load --config configs/conditions.yaml [--db-url ...] [--concepts ...]
 
 ---
 
+### `somop multi` — generate and run multiple datasets at once
+
+Use a multi-config YAML to define N datasets, each with its own data config and Bunny collection ID. `somop multi run` produces a single `docker-compose.multi.yaml` with all services namespaced per dataset (`db-<name>`, `loader-<name>`, `bunny-a-<name>`, `bunny-b-<name>`).
+
+```bash
+somop multi generate --config configs/multi_example.yaml
+
+somop multi run --config configs/multi_example.yaml
+```
+
+**Multi-config format** (`configs/multi_example.yaml`):
+
+```yaml
+api_url: http://host.docker.internal:8100/api/v1
+api_username: admin@example.com
+api_password: secret
+db_password: postgres
+# bunny_build: ../bunny/hutch-bunny
+# concepts: ./data/CONCEPT.csv
+
+datasets:
+  - name: conditions
+    config: configs/conditions.yaml
+    collection_id: <uuid-1>
+
+  - name: mortality
+    config: configs/mortality_conditions.yaml
+    collection_id: <uuid-2>
+
+  - name: diabetes
+    config: configs/uk_t2d_primary_care.yaml
+    collection_id: <uuid-3>
+    db_port: 5435        # optional: expose this DB on a host port
+    db_password: secret  # optional: override global db_password
+```
+
+`api_url`, `api_username`, `api_password`, `db_password`, `bunny_build`, and `concepts` are global defaults. Per-dataset overrides: `db_name`, `db_password`, `db_url`, `db_port`, `drop_db`.
+
+`somop multi generate` accepts `--concepts FILE` to override the path set in the config.
+`somop multi run` accepts `--compose-out FILE` to write the compose file to a custom path.
+
+---
+
 ## Config file structure
 
 ```yaml

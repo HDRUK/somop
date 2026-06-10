@@ -1,0 +1,38 @@
+# Multi-dataset configuration for somop.
+# Generates multiple synthetic datasets and spins them up as a single
+# docker-compose stack, each with its own Postgres DB and pair of Bunnies.
+#
+# Usage:
+#   somop multi generate --config configs/multi_example.yaml
+#   somop multi run      --config configs/multi_example.yaml
+
+api_url: http://host.docker.internal:8100/api/v1
+api_username: 53d0a39bfe92c6fe18a5e035630d3e6ef180366489b3a2c22cc03a7f6a3c1ca1
+api_password: a6a7f1cac6691df03a8cd04369d684fb004c8a7027a5c7a5b4104445528d20dd
+db_password: postgres
+bunny_build: ../bunny/hutch-bunny # uncomment to use a local Bunny build
+concepts: ./data/CONCEPT.csv # shared CONCEPT.csv copied into every data dir
+
+datasets:
+  - name: conditions
+    config: configs/conditions.yaml
+    collection_id: 08eef57c-c497-4d9a-97f9-f6abe7584a8c
+
+  - name: mortality
+    config: configs/mortality_conditions.yaml
+    collection_id: d5c7509c-c990-4df6-8172-cd82c128907a
+
+  - name: diabetes
+    config: configs/uk_t2d_primary_care.yaml
+    collection_id: e2da6447-8e9b-444a-845b-501a206c0199
+    # db_port: 5435        # expose this dataset's DB on a host port
+    # db_password: secret  # override the global db_password for this dataset
+    # db_url: postgresql://postgres:postgres@host.docker.internal:5435/diabetes
+
+  - name: ckd_antibodies
+    config: configs/ckd_antibodies.yaml
+    collection_id: c0821c05-7715-4b07-8255-34285c3ff397
+
+  - name: wide
+    config: configs/wide_dataset.yaml
+    collection_id: ac77bba3-7e0f-4009-adc7-3949dcb01118
