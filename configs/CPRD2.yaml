@@ -2,6 +2,30 @@ seed: 242
 out_dir: ./CPRD
 chunk_size: 50000
 
+person:
+  enabled: true
+  races:
+    - concept_id: 8527     # White
+      p: 0.81
+    - concept_id: 38003574 # Asian Indian
+      p: 0.03
+    - concept_id: 38003589 # Pakistani
+      p: 0.03
+    - concept_id: 38003598 # Black
+      p: 0.02
+    - concept_id: 38003600 # African
+      p: 0.02
+    - concept_id: 38003575 # Bangladeshi
+      p: 0.01
+    - concept_id: 38003579 # Chinese
+      p: 0.01
+    - concept_id: 8515     # Asian
+      p: 0.04
+    - concept_id: 8516     # Black or African American
+      p: 0.01
+    - concept_id: 38003615 # Middle Eastern or North African
+      p: 0.02
+
 procedure:
   enabled: true
   items:
