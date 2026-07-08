@@ -3,6 +3,16 @@ from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field, conint, confloat, validator, PositiveInt
 
 
+class ThresholdSwitch(BaseModel):
+    """Map a numeric value to a concept_id based on a threshold.
+
+    If value_as_number > value → above_concept_id, otherwise → below_concept_id.
+    """
+    value: float
+    above_concept_id: int
+    below_concept_id: Optional[int] = None
+
+
 class Item(BaseModel):
     concept_id: conint(ge=0)
     p: confloat(ge=0, le=1) = 0.0
@@ -11,6 +21,7 @@ class Item(BaseModel):
     dist: Optional[Literal["normal", "lognormal", "uniform"]] = None
     param1: Optional[float] = None  # mean/mu/low
     param2: Optional[float] = None  # sd/sigma/high
+    threshold: Optional[ThresholdSwitch] = None
 
 
 class TableConfig(BaseModel):

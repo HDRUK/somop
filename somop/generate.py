@@ -378,6 +378,14 @@ def generate(
                     else:
                         vals = np.random.uniform(a, b, size=len(idxs))
 
+                concept_ids_for_vals = None
+                if item.threshold is not None and vals is not None:
+                    t = item.threshold
+                    concept_ids_for_vals = [
+                        t.above_concept_id if v > t.value else t.below_concept_id
+                        for v in vals
+                    ]
+
                 for k, i in enumerate(idxs):
                     meas_models.append(
                         Measurement(
@@ -387,6 +395,9 @@ def generate(
                             measurement_date=random_past_date(),
                             value_as_number=(
                                 float(vals[k]) if vals is not None else None
+                            ),
+                            value_as_concept_id=(
+                                concept_ids_for_vals[k] if concept_ids_for_vals is not None else None
                             ),
                             unit_concept_id=getattr(item, "unit_concept_id", 0),
                             measurement_type_concept_id=0,

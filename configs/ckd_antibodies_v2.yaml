@@ -1,6 +1,6 @@
 seed: 42
 out_dir: ./out/ckd_antibodies_v2
-chunk_size: 10000
+chunk_size: 50000
 
 person:
   enabled: true
@@ -10,6 +10,11 @@ person:
       p: 0.48
     - concept_id: 8532 # female
       p: 0.52
+  races:
+    - concept_id: 8527
+      p: 0.9
+    - concept_id: 8515
+      p: 0.1
 
 # Ensure most people carry at least one CKD-related condition by using
 # overlapping probabilities across common CKD concepts (stages, ESRD, dialysis).
@@ -148,24 +153,40 @@ measurement:
       dist: lognormal
       param1: 7.0 # mu (median ~ e^7 ≈ 1096 AU/mL)
       param2: 0.7 # sigma
+      threshold:
+        value: 33.8       # WHO-anchored Roche cut-off
+        above_concept_id: 1297005  # positive
+        below_concept_id: 1297003  # negative
     - concept_id: 3955313 # Anti-nucleocapsid (N) antibody
       unit_concept_id: 12310003 # Index
       p: 0.50
       dist: lognormal
       param1: 0.5 # skewed lower; many vaccine-only will be low/negative
       param2: 0.7
+      threshold:
+        value: 1.0        # index ≥1.0 = reactive
+        above_concept_id: 1297005  # positive
+        below_concept_id: 1297003  # negative
     - concept_id: 3955300 # SARS-CoV-2 IgM
       unit_concept_id: 12310004 # Titer
       p: 0.30
       dist: lognormal
       param1: 1.2
       param2: 0.6
+      threshold:
+        value: 1.1        # titer >1.1 = reactive
+        above_concept_id: 1297005  # positive
+        below_concept_id: 1297003  # negative
     - concept_id: 3955297 # SARS-CoV-2 IgA
       unit_concept_id: 12310001 # U/mL
       p: 0.25
       dist: lognormal
       param1: 3.2
       param2: 0.8
+      threshold:
+        value: 1.5        # U/mL >1.5 = reactive
+        above_concept_id: 1297005  # positive
+        below_concept_id: 1297003  # negative
 
 location:
   enabled: true
