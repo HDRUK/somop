@@ -4,12 +4,12 @@ import random
 import yaml
 import numpy as np
 import pandas as pd
-import shutil
 from typing import Dict, List, Optional, Any
 import logging
 from datetime import datetime
+from pydantic_core import PydanticUndefined
 from .config import Config
-from .utils import ensure_dir, write_df, random_birthdate, random_past_date
+from .utils import ensure_dir, write_df
 from .dist import _sample_ages
 
 from .omop.v5_4_3 import (
@@ -48,10 +48,7 @@ logger.addHandler(handler)
 logger.propagate = False
 
 today = datetime.today().date()
-
-
-def _choice_with_probs(items: List, probs: List[float], size: int):
-    return np.random.choice(items, size=size, p=np.array(probs))
+_TODAY64 = np.datetime64(today, "D")
 
 
 def _load_config(config: Optional[dict | str | os.PathLike]) -> Config:
@@ -65,6 +62,59 @@ def _load_config(config: Optional[dict | str | os.PathLike]) -> Config:
         return Config(**config)
     else:
         raise TypeError("config must be None, dict, or path to YAML")
+
+
+def _field_defaults(model_cls) -> dict:
+    """Default value for each model field (None where the field is required)."""
+    out = {}
+    for name, f in model_cls.model_fields.items():
+        out[name] = None if f.default is PydanticUndefined else f.default
+    return out
+
+
+def _build_df(model_cls, n: int, columns: dict) -> pd.DataFrame:
+    """Build a DataFrame with every model field as a column, in declared order.
+
+    ``columns`` supplies the values we computed; any field not supplied is
+    filled with its model default (constant defaults are broadcast, ``None``
+    defaults become empty cells on write). This reproduces the shape/order that
+    ``model_dump()`` used to produce, without per-row model construction.
+    """
+    fields = list(model_cls.model_fields.keys())
+    defaults = _field_defaults(model_cls)
+    data = {}
+    for name in fields:
+        if name in columns:
+            data[name] = columns[name]
+        else:
+            default = defaults[name]
+            data[name] = np.full(n, np.nan) if default is None else [default] * n
+    return pd.DataFrame(data, columns=fields)
+
+
+def _past_dates(n: int, rng, max_years: int = 10) -> np.ndarray:
+    """Vectorised equivalent of ``random_past_date`` — returns ``datetime.date`` objects."""
+    max_days = max_years * 365
+    offsets = rng.integers(0, max_days + 1, size=n).astype("timedelta64[D]")
+    return (_TODAY64 - offsets).astype(object)
+
+
+def _sample_offsets(rng, size: int, p_arr: np.ndarray):
+    """Vectorised Bernoulli sampling across items.
+
+    For each item, the number of persons who "fire" follows Binomial(size, p),
+    which is statistically identical to the old ``np.random.rand(size) < p`` mask
+    but costs one draw per item instead of ``size`` draws per item. Returns the
+    per-item hit counts, the flattened item index for each fired row, and a
+    uniform person offset (0..size-1) for each fired row.
+    """
+    counts = rng.binomial(size, p_arr)
+    total = int(counts.sum())
+    if total == 0:
+        return counts, 0, None, None
+    item_idx = np.repeat(np.arange(len(p_arr)), counts)
+    offsets = rng.integers(0, size, total)
+    return counts, total, item_idx, offsets
 
 
 def generate(
@@ -101,6 +151,7 @@ def generate(
     if cfg.seed is not None:
         random.seed(cfg.seed)
         np.random.seed(cfg.seed)
+    rng = np.random.default_rng(cfg.seed)
 
     out_dir = cfg.out_dir
     ensure_dir(out_dir)
@@ -126,17 +177,25 @@ def generate(
     n_chunks = (n + chunk - 1) // chunk
 
     ids = {"drug": 1, "meas": 1, "cond": 1, "obs": 1, "proc": 1, "spec": 1}
-    wrote = {
-        "person": False,
-        "drug": False,
-        "meas": False,
-        "cond": False,
-        "obs": False,
-        "proc": False,
-        "spec": False,
-        "death": False,
-        "loc": False,
-    }
+    wrote = {k: False for k in paths}
+
+    # Pre-compute per-item concept id and probability arrays (constant across chunks).
+    def _prep(items):
+        return (
+            np.array([it.concept_id for it in items], dtype=np.int64),
+            np.array([it.p for it in items], dtype=float),
+        )
+
+    drug_ids_arr, drug_p = _prep(cfg.drug_exposure.items) if cfg.drug_exposure.items else (None, None)
+    cond_ids_arr, cond_p = _prep(cfg.condition.items) if cfg.condition.items else (None, None)
+    obs_ids_arr, obs_p = _prep(cfg.observation.items) if cfg.observation.items else (None, None)
+    proc_ids_arr, proc_p = _prep(cfg.procedure.items) if cfg.procedure.items else (None, None)
+    spec_ids_arr, spec_p = _prep(cfg.specimen.items) if cfg.specimen.items else (None, None)
+    spec_units = (
+        np.array([it.unit_concept_id for it in cfg.specimen.items], dtype=object)
+        if cfg.specimen.items
+        else None
+    )
 
     # LOCATION — static reference table, written once before the chunk loop
     location_ids: list = []
@@ -172,6 +231,44 @@ def generate(
         wrote["loc"] = True
         location_ids = loc_df["location_id"].tolist()
         logger.info("LOCATION: loaded %s rows from %s", len(loc_df), cfg.location.prebuilt_file)
+    location_ids_arr = np.array(location_ids) if location_ids else None
+
+    def _write_events(key, model_cls, total, item_idx, offsets, ids_arr, start, extra=None):
+        """Assemble and append a generic event table (id, person, concept, date)."""
+        columns = {
+            model_cls_pk[key]: np.arange(ids[key], ids[key] + total),
+            "person_id": start + offsets,
+            model_cls_concept[key]: ids_arr[item_idx],
+            model_cls_date[key]: _past_dates(total, rng),
+        }
+        if extra:
+            columns.update(extra)
+        df = _build_df(model_cls, total, columns)
+        write_df(df, paths[key], header=not wrote[key])
+        wrote[key] = True
+        ids[key] += total
+
+    model_cls_pk = {
+        "drug": "drug_exposure_id",
+        "cond": "condition_occurrence_id",
+        "obs": "observation_id",
+        "proc": "procedure_occurrence_id",
+        "spec": "specimen_id",
+    }
+    model_cls_concept = {
+        "drug": "drug_concept_id",
+        "cond": "condition_concept_id",
+        "obs": "observation_concept_id",
+        "proc": "procedure_concept_id",
+        "spec": "specimen_concept_id",
+    }
+    model_cls_date = {
+        "drug": "drug_exposure_start_date",
+        "cond": "condition_start_date",
+        "obs": "observation_date",
+        "proc": "procedure_date",
+        "spec": "specimen_date",
+    }
 
     for c in range(n_chunks):
         start = c * chunk + 1
@@ -188,24 +285,22 @@ def generate(
 
         # PERSON
         if cfg.person.enabled:
-            rng = np.random.default_rng()
-
             genders = [g.concept_id for g in cfg.person.genders]
             gprobs = [g.p for g in cfg.person.genders]
-            gvals = _choice_with_probs(genders, gprobs, size)
+            gvals = rng.choice(genders, size=size, p=np.array(gprobs))
 
             eths = [e.concept_id for e in cfg.person.ethnicities]
-            eth_probs = [e.p for e in cfg.person.ethnicities]
-            evals = _choice_with_probs(eths, eth_probs, size)
+            eth_probs = np.array([e.p for e in cfg.person.ethnicities], dtype=float)
+            evals = rng.choice(eths, size=size, p=eth_probs / eth_probs.sum())
 
             races = [e.concept_id for e in cfg.person.races]
-            race_probs = [e.p for e in cfg.person.races]
-            rvals = _choice_with_probs(races, race_probs, size)
-
-            person_ids = np.arange(start, start + size, dtype=int)
+            race_probs = np.array([e.p for e in cfg.person.races], dtype=float)
+            rvals = rng.choice(races, size=size, p=race_probs / race_probs.sum())
 
             lvals = (
-                rng.choice(location_ids, size=size) if location_ids else [None] * size
+                rng.choice(location_ids_arr, size=size)
+                if location_ids_arr is not None
+                else np.full(size, np.nan)
             )
 
             ages_years = _sample_ages(
@@ -216,333 +311,189 @@ def generate(
                 min_age=cfg.person.min_age,
                 max_age=cfg.person.max_age,
                 rng=rng,
+            ).astype("int64")
+
+            # Uniform day within the year-long window ending `age` years ago.
+            days_back = (ages_years * 365 + rng.integers(0, 365, size=size)).astype(
+                "timedelta64[D]"
             )
+            bd = _TODAY64 - days_back  # datetime64[D]
+            years = bd.astype("datetime64[Y]").astype(int) + 1970
+            months = bd.astype("datetime64[M]").astype(int) % 12 + 1
+            days = (bd - bd.astype("datetime64[M]")).astype("timedelta64[D]").astype(int) + 1
 
-            birthdates = np.array(
-                [random_birthdate(int(age), today, rng) for age in ages_years]
-            )
-
-            people = [
-                Person(
-                    person_id=int(pid),
-                    gender_concept_id=int(g),
-                    birth_datetime=d,
-                    year_of_birth=d.year,
-                    month_of_birth=d.month,
-                    day_of_birth=d.day,
-                    race_concept_id=int(r),
-                    ethnicity_concept_id=int(e),
-                    location_id=int(loc) if loc is not None else None,
-                )
-                for pid, g, e, r, d, loc in zip(person_ids, gvals, evals, rvals, birthdates, lvals)
-            ]
-
-            person_df = pd.DataFrame(
-                (p.model_dump() for p in people),
-                columns=list(Person.model_fields.keys()),
+            person_df = _build_df(
+                Person,
+                size,
+                {
+                    "person_id": np.arange(start, start + size, dtype=int),
+                    "gender_concept_id": gvals,
+                    "year_of_birth": years,
+                    "month_of_birth": months,
+                    "day_of_birth": days,
+                    "birth_datetime": bd.astype(object),
+                    "race_concept_id": rvals,
+                    "ethnicity_concept_id": evals,
+                    "location_id": lvals,
+                },
             )
             write_df(person_df, paths["person"], header=not wrote["person"])
             wrote["person"] = True
-        else:
-            person_ids = np.arange(start, start + size, dtype=int)
 
         had_drug = np.zeros(size, dtype=bool)
         had_cond = np.zeros(size, dtype=bool)
 
+        # DRUG_EXPOSURE
         if cfg.drug_exposure.enabled and cfg.drug_exposure.items:
-            drug_models = []
-            for item in cfg.drug_exposure.items:
-                mask = np.random.rand(size) < item.p
-                if mask.any():
-                    idxs = np.where(mask)[0]
-                    for i in idxs:
-                        drug_models.append(
-                            DrugExposure(
-                                drug_exposure_id=ids["drug"],
-                                person_id=int(start + i),
-                                drug_concept_id=int(item.concept_id),
-                                drug_type_concept_id=0,
-                                drug_exposure_start_date=random_past_date(),
-                                drug_exposure_end_date=random_past_date(),
-                            )
-                        )
-                        ids["drug"] += 1
-                    had_drug[mask] = True
-
-            if drug_models:
-                drug_df = pd.DataFrame(
-                    (m.model_dump() for m in drug_models),
-                    columns=list(DrugExposure.model_fields.keys()),
+            counts, total, item_idx, offsets = _sample_offsets(rng, size, np.clip(drug_p, 0, 1))
+            if total:
+                _write_events(
+                    "drug", DrugExposure, total, item_idx, offsets, drug_ids_arr, start,
+                    extra={"drug_exposure_end_date": _past_dates(total, rng)},
                 )
-                write_df(drug_df, paths["drug"], header=not wrote["drug"])
-                wrote["drug"] = True
+                had_drug[offsets] = True
 
         # CONDITION_OCCURRENCE
         if cfg.condition.enabled and cfg.condition.items:
-            cond_models = []
-            cond_multiplier = 1.0
+            mult = 1.0
             if had_drug.any():
-                cond_multiplier *= float(
-                    cfg.interactions.after_drug_exposure.get("condition", 1.0)
-                )
-
-            for item in cfg.condition.items:
-                p_eff = min(1.0, float(item.p) * cond_multiplier)
-                mask = np.random.rand(size) < p_eff
-                if mask.any():
-                    idxs = np.where(mask)[0]
-                    for i in idxs:
-                        cond_models.append(
-                            ConditionOccurrence(
-                                condition_occurrence_id=ids["cond"],
-                                person_id=int(start + i),
-                                condition_concept_id=int(item.concept_id),
-                                condition_type_concept_id=0,
-                                condition_start_date=random_past_date(),
-                            )
-                        )
-                        ids["cond"] += 1
-                    had_cond[mask] = True
-
-            if cond_models:
-                cond_df = pd.DataFrame(
-                    (m.model_dump() for m in cond_models),
-                    columns=list(ConditionOccurrence.model_fields.keys()),
-                )
-                write_df(cond_df, paths["cond"], header=not wrote["cond"])
-                wrote["cond"] = True
+                mult *= float(cfg.interactions.after_drug_exposure.get("condition", 1.0))
+            counts, total, item_idx, offsets = _sample_offsets(
+                rng, size, np.clip(cond_p * mult, 0, 1)
+            )
+            if total:
+                _write_events("cond", ConditionOccurrence, total, item_idx, offsets, cond_ids_arr, start)
+                had_cond[offsets] = True
 
         # OBSERVATION
         if cfg.observation.enabled and cfg.observation.items:
-            obs_models = []
-            obs_multiplier = 1.0
+            mult = 1.0
             if had_drug.any():
-                obs_multiplier *= float(
-                    cfg.interactions.after_drug_exposure.get("observation", 1.0)
-                )
+                mult *= float(cfg.interactions.after_drug_exposure.get("observation", 1.0))
+            counts, total, item_idx, offsets = _sample_offsets(
+                rng, size, np.clip(obs_p * mult, 0, 1)
+            )
+            if total:
+                _write_events("obs", Observation, total, item_idx, offsets, obs_ids_arr, start)
 
-            for item in cfg.observation.items:
-                p_eff = min(1.0, float(item.p) * obs_multiplier)
-                mask = np.random.rand(size) < p_eff
-                if mask.any():
-                    idxs = np.where(mask)[0]
-                    for i in idxs:
-                        obs_models.append(
-                            Observation(
-                                observation_id=ids["obs"],
-                                person_id=int(start + i),
-                                observation_concept_id=int(item.concept_id),
-                                observation_date=random_past_date(),
-                                observation_type_concept_id=0,
-                            )
-                        )
-                        ids["obs"] += 1
-
-            if obs_models:
-                obs_df = pd.DataFrame(
-                    (m.model_dump() for m in obs_models),
-                    columns=list(Observation.model_fields.keys()),
-                )
-                write_df(obs_df, paths["obs"], header=not wrote["obs"])
-                wrote["obs"] = True
-
-        # MEASUREMENT
+        # MEASUREMENT (per-item values / thresholds handled over firing items only)
         if cfg.measurement.enabled and cfg.measurement.items:
-            meas_models = []
-            meas_multiplier = 1.0
+            mult = 1.0
             if had_drug.any():
-                meas_multiplier *= float(
-                    cfg.interactions.after_drug_exposure.get("measurement", 1.0)
-                )
+                mult *= float(cfg.interactions.after_drug_exposure.get("measurement", 1.0))
             if had_cond.any():
-                meas_multiplier *= float(
-                    cfg.interactions.after_condition.get("measurement", 1.0)
-                )
+                mult *= float(cfg.interactions.after_condition.get("measurement", 1.0))
 
-            for item in cfg.measurement.items:
-                p_eff = min(1.0, float(item.p) * meas_multiplier)
-                mask = np.random.rand(size) < p_eff
-                if not mask.any():
-                    continue
+            p_eff = np.clip(
+                np.array([it.p for it in cfg.measurement.items], dtype=float) * mult, 0, 1
+            )
+            counts = rng.binomial(size, p_eff)
+            total = int(counts.sum())
+            if total:
+                person_ids = np.empty(total, dtype=np.int64)
+                concept_ids = np.empty(total, dtype=np.int64)
+                unit_ids = np.empty(total, dtype=object)
+                values = np.full(total, np.nan)
+                value_concepts = np.empty(total, dtype=object)
+                value_concepts[:] = None
 
-                idxs = np.where(mask)[0]
+                pos = 0
+                for j in np.nonzero(counts)[0]:
+                    item = cfg.measurement.items[j]
+                    k = int(counts[j])
+                    sl = slice(pos, pos + k)
+                    person_ids[sl] = start + rng.integers(0, size, k)
+                    concept_ids[sl] = item.concept_id
+                    unit_ids[sl] = getattr(item, "unit_concept_id", 0)
 
-                vals = None
-                if getattr(item, "dist", None):
-                    a = item.param1 if item.param1 is not None else 0.0
-                    b = item.param2 if item.param2 is not None else 1.0
-                    if item.dist == "normal":
-                        vals = np.random.normal(a, b, size=len(idxs))
-                    elif item.dist == "lognormal":
-                        vals = np.random.lognormal(a, b, size=len(idxs))
-                    else:
-                        vals = np.random.uniform(a, b, size=len(idxs))
+                    if item.dist:
+                        a = item.param1 if item.param1 is not None else 0.0
+                        b = item.param2 if item.param2 is not None else 1.0
+                        if item.dist == "normal":
+                            v = rng.normal(a, b, size=k)
+                        elif item.dist == "lognormal":
+                            v = rng.lognormal(a, b, size=k)
+                        else:
+                            v = rng.uniform(a, b, size=k)
+                        values[sl] = v
+                        if item.threshold is not None:
+                            t = item.threshold
+                            value_concepts[sl] = np.where(
+                                v > t.value, t.above_concept_id, t.below_concept_id
+                            )
+                    pos += k
 
-                concept_ids_for_vals = None
-                if item.threshold is not None and vals is not None:
-                    t = item.threshold
-                    concept_ids_for_vals = [
-                        t.above_concept_id if v > t.value else t.below_concept_id
-                        for v in vals
-                    ]
-
-                for k, i in enumerate(idxs):
-                    meas_models.append(
-                        Measurement(
-                            measurement_id=ids["meas"],
-                            person_id=int(start + i),
-                            measurement_concept_id=int(item.concept_id),
-                            measurement_date=random_past_date(),
-                            value_as_number=(
-                                float(vals[k]) if vals is not None else None
-                            ),
-                            value_as_concept_id=(
-                                concept_ids_for_vals[k] if concept_ids_for_vals is not None else None
-                            ),
-                            unit_concept_id=getattr(item, "unit_concept_id", 0),
-                            measurement_type_concept_id=0,
-                        )
-                    )
-                    ids["meas"] += 1
-
-            if meas_models:
-                meas_df = pd.DataFrame(
-                    (m.model_dump() for m in meas_models),
-                    columns=list(Measurement.model_fields.keys()),
+                meas_df = _build_df(
+                    Measurement,
+                    total,
+                    {
+                        "measurement_id": np.arange(ids["meas"], ids["meas"] + total),
+                        "person_id": person_ids,
+                        "measurement_concept_id": concept_ids,
+                        "measurement_date": _past_dates(total, rng),
+                        "value_as_number": values,
+                        "value_as_concept_id": value_concepts,
+                        "unit_concept_id": unit_ids,
+                    },
                 )
                 write_df(meas_df, paths["meas"], header=not wrote["meas"])
                 wrote["meas"] = True
-
-                # PROCEDURE_OCCURRENCE
+                ids["meas"] += total
 
         # PROCEDURE_OCCURRENCE
         if cfg.procedure.enabled and cfg.procedure.items:
-            proc_models = []
-            proc_multiplier = 1.0
+            mult = 1.0
             if had_drug.any():
-                proc_multiplier *= float(
-                    cfg.interactions.after_drug_exposure.get("procedure", 1.0)
-                )
+                mult *= float(cfg.interactions.after_drug_exposure.get("procedure", 1.0))
             if had_cond.any():
-                proc_multiplier *= float(
-                    cfg.interactions.after_condition.get("procedure", 1.0)
+                mult *= float(cfg.interactions.after_condition.get("procedure", 1.0))
+            counts, total, item_idx, offsets = _sample_offsets(
+                rng, size, np.clip(proc_p * mult, 0, 1)
+            )
+            if total:
+                proc_dates = _past_dates(total, rng)
+                _write_events(
+                    "proc", ProcedureOccurrence, total, item_idx, offsets, proc_ids_arr, start,
+                    extra={
+                        "procedure_date": proc_dates,
+                        "procedure_end_date": proc_dates,
+                        "quantity": [1] * total,
+                    },
                 )
-
-            for item in cfg.procedure.items:
-                p_eff = min(1.0, float(item.p) * proc_multiplier)
-                mask = np.random.rand(size) < p_eff
-                if mask.any():
-                    idxs = np.where(mask)[0]
-                    for i in idxs:
-                        proc_date = random_past_date()
-                        quantity = getattr(item, "quantity", 1)
-                        if quantity in (None, 0):
-                            quantity = 1
-
-                        po = ProcedureOccurrence(
-                            procedure_occurrence_id=ids["proc"],
-                            person_id=int(start + i),
-                            procedure_concept_id=int(item.concept_id),
-                            procedure_date=proc_date,
-                            procedure_datetime=None,
-                            procedure_end_date=proc_date,
-                            procedure_end_datetime=None,
-                            procedure_type_concept_id=int(
-                                getattr(item, "procedure_type_concept_id", 0)
-                            ),
-                            modifier_concept_id=getattr(
-                                item, "modifier_concept_id", None
-                            ),
-                            quantity=quantity,
-                            provider_id=getattr(item, "provider_id", None),
-                            visit_occurrence_id=getattr(
-                                item, "visit_occurrence_id", None
-                            ),
-                            visit_detail_id=getattr(item, "visit_detail_id", None),
-                            procedure_source_value=getattr(
-                                item, "procedure_source_value", None
-                            ),
-                            procedure_source_concept_id=getattr(
-                                item, "procedure_source_concept_id", None
-                            ),
-                            modifier_source_value=getattr(
-                                item, "modifier_source_value", None
-                            ),
-                        )
-
-                        proc_models.append(po)
-                        ids["proc"] += 1
-
-            if proc_models:
-                proc_df = pd.DataFrame(
-                    (m.model_dump() for m in proc_models),
-                    columns=list(ProcedureOccurrence.model_fields.keys()),
-                )
-                write_df(proc_df, paths["proc"], header=not wrote["proc"])
-                wrote["proc"] = True
 
         # SPECIMEN
         if cfg.specimen.enabled and cfg.specimen.items:
-            spec_models = []
-            for item in cfg.specimen.items:
-                mask = np.random.rand(size) < item.p
-                if not mask.any():
-                    continue
-                idxs = np.where(mask)[0]
-                for i in idxs:
-                    spec_models.append(
-                        Specimen(
-                            specimen_id=ids["spec"],
-                            person_id=int(start + i),
-                            specimen_concept_id=int(item.concept_id),
-                            specimen_date=random_past_date(),
-                            unit_concept_id=getattr(item, "unit_concept_id", None),
-                        )
-                    )
-                    ids["spec"] += 1
-
-            if spec_models:
-                spec_df = pd.DataFrame(
-                    (m.model_dump() for m in spec_models),
-                    columns=list(Specimen.model_fields.keys()),
+            counts, total, item_idx, offsets = _sample_offsets(rng, size, np.clip(spec_p, 0, 1))
+            if total:
+                _write_events(
+                    "spec", Specimen, total, item_idx, offsets, spec_ids_arr, start,
+                    extra={"unit_concept_id": spec_units[item_idx]},
                 )
-                write_df(spec_df, paths["spec"], header=not wrote["spec"])
-                wrote["spec"] = True
 
         # DEATH — at most one row per person
         if cfg.death.enabled and cfg.death.p > 0:
-            death_mask = np.random.rand(size) < cfg.death.p
-            if death_mask.any():
-                death_models = []
-                dead_idxs = np.where(death_mask)[0]
-
-                cause_ids = None
-                cause_weights = None
+            n_dead = int(rng.binomial(size, cfg.death.p))
+            if n_dead:
+                dead_offsets = rng.integers(0, size, n_dead)
+                cause_concepts = None
                 if cfg.death.causes:
-                    cause_ids = [c.concept_id for c in cfg.death.causes]
-                    raw_weights = np.array(
-                        [c.p for c in cfg.death.causes], dtype=float
-                    )
-                    cause_weights = raw_weights / raw_weights.sum()
+                    cause_ids = [cc.concept_id for cc in cfg.death.causes]
+                    raw = np.array([cc.p for cc in cfg.death.causes], dtype=float)
+                    cause_concepts = rng.choice(cause_ids, size=n_dead, p=raw / raw.sum())
 
-                for i in dead_idxs:
-                    cause_concept_id = None
-                    if cause_ids is not None:
-                        cause_concept_id = int(
-                            np.random.choice(cause_ids, p=cause_weights)
-                        )
-                    death_models.append(
-                        Death(
-                            person_id=int(start + i),
-                            death_date=random_past_date(),
-                            death_type_concept_id=cfg.death.death_type_concept_id,
-                            cause_concept_id=cause_concept_id,
-                        )
-                    )
-
-                death_df = pd.DataFrame(
-                    (m.model_dump() for m in death_models),
-                    columns=list(Death.model_fields.keys()),
+                death_df = _build_df(
+                    Death,
+                    n_dead,
+                    {
+                        "person_id": start + dead_offsets,
+                        "death_date": _past_dates(n_dead, rng),
+                        "death_type_concept_id": [cfg.death.death_type_concept_id] * n_dead,
+                        **(
+                            {"cause_concept_id": cause_concepts}
+                            if cause_concepts is not None
+                            else {}
+                        ),
+                    },
                 )
                 write_df(death_df, paths["death"], header=not wrote["death"])
                 wrote["death"] = True
