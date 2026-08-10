@@ -229,7 +229,7 @@ location:
       latitude: 51.5074
       longitude: -0.1278
   # …or point at a pre-built LOCATION table (used only when `items` is empty):
-  # prebuilt_file: locations/uk/LOCATION.csv
+  # prebuilt_file: ./LOCATION.csv   # e.g. a UK table from the cohort-discovery-service-docs repo
 
 interactions:
   after_drug_exposure:
