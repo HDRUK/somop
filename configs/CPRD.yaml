@@ -1,5 +1,5 @@
 seed: 242
-out_dir: ./out/CPRD
+out_dir: ./out/CPRD_temp
 chunk_size: 100000
 
 person:

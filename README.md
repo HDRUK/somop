@@ -221,12 +221,15 @@ death:
   death_type_concept_id: 32519  # EHR
 
 location:
+  # Either list locations inline…
   items:
     - location_id: 1
       city: London
       country_source_value: GBR
       latitude: 51.5074
       longitude: -0.1278
+  # …or point at a pre-built LOCATION table (used only when `items` is empty):
+  # prebuilt_file: locations/uk/LOCATION.csv
 
 interactions:
   after_drug_exposure:
@@ -235,3 +238,52 @@ interactions:
   after_condition:
     observation: 1.3
 ```
+
+---
+
+## Location table
+
+The OMOP `LOCATION` table gives each person a geographic point (`latitude`/`longitude`).
+BUNNY uses those coordinates to answer distance queries — "people within *N* km of
+here" — so a dataset needs a populated `LOCATION` table for location-based cohort
+discovery to work.
+
+There are two ways to supply one, via the `location` block in a config:
+
+**1. Inline** — list the locations you want directly:
+
+```yaml
+location:
+  enabled: true
+  items:
+    - location_id: 1
+      city: London
+      latitude: 51.5074
+      longitude: -0.1278
+```
+
+**2. Pre-built table** — point at a ready-made TSV `LOCATION` file:
+
+```yaml
+location:
+  enabled: true
+  prebuilt_file: ./LOCATION.csv   # a LOCATION.csv you downloaded (see below)
+```
+
+`items` takes precedence: `prebuilt_file` is only read when `items` is empty. In both
+cases `somop generate` assigns each synthetic person a random `location_id` from the
+table.
+
+### Ready-made UK tables
+
+You don't have to build a `LOCATION` table. Pre-built UK tables (whole-UK and per nation)
+using real **population-weighted centroids** for each small-area geography are published
+in the [Cohort Discovery Service docs repo](https://github.com/HDRUK/cohort-discovery-service-docs/tree/main/locations).
+Download one and point `prebuilt_file` at it.
+
+Because each row's `location_source_value` matches the code that
+[`uk-postcode-mapper`](https://github.com/HDRUK/uk-postcode-mapper) emits, the same tables
+also let custodians attach location to **real** OMOP data by blurring a postcode to its
+LSOA/Data Zone and joining on the code — no postcode is ever stored. See the
+[Location & Geo-radius Filtering](https://hdruk.github.io/cohort-discovery-service-docs/omop/location/)
+page for the privacy rationale.

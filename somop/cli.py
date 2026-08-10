@@ -201,6 +201,13 @@ def load(config_path, db_name, db_password, db_url, db_port, drop_db, concepts, 
     help="Path to a local Bunny build context (directory with a Dockerfile).",
 )
 @click.option(
+    "--skip-load/--no-skip-load",
+    default=False,
+    show_default=True,
+    help="Skip omop-lite loading and just (re)start Bunny against the existing database. "
+    "For the embedded Postgres this reuses the persisted data volume from a previous load.",
+)
+@click.option(
     "--compose-out",
     default=None,
     type=click.Path(dir_okay=False, writable=True, path_type=str),
@@ -219,6 +226,7 @@ def run(
     drop_db,
     concepts,
     bunny_build,
+    skip_load,
     compose_out,
 ):
     with open(config_path) as f:
@@ -245,6 +253,7 @@ def run(
         db_url=db_url,
         drop_db=drop_db,
         bunny_build=bunny_build,
+        skip_load=skip_load,
     )
 
     if compose_out is None:
@@ -253,10 +262,15 @@ def run(
         yaml.dump(compose_dict, f, default_flow_style=False, sort_keys=False)
     click.echo(f"Wrote docker-compose to: {compose_out}")
 
-    click.echo("Cleaning up any existing containers...")
-    subprocess.run(["docker", "compose", "-f", compose_out, "down"], check=True)
+    if skip_load:
+        click.echo("Skipping data load; starting Bunny against the existing database...")
+    else:
+        # Fresh load: remove containers AND the persisted data volume so omop-lite
+        # repopulates a clean database.
+        click.echo("Cleaning up any existing containers and data volume...")
+        subprocess.run(["docker", "compose", "-f", compose_out, "down", "-v"], check=True)
+        click.echo(f"Starting Bunny from: {compose_out}")
 
-    click.echo(f"Starting Bunny from: {compose_out}")
     proc = subprocess.Popen(["docker", "compose", "-f", compose_out, "up", "--build"])
     try:
         proc.wait()
