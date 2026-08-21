@@ -335,7 +335,11 @@ def _bunny_service(
     image_or_build = (
         {"build": {"context": os.path.abspath(bunny_build)}}
         if bunny_build
-        else {"image": "ghcr.io/health-informatics-uon/hutch/bunny:edge"}
+        else {
+            "image": "ghcr.io/health-informatics-uon/hutch/bunny:edge",
+            # Always re-pull so we run the latest edge build of Bunny.
+            "pull_policy": "always",
+        }
     )
     service = {
         **image_or_build,
@@ -355,6 +359,7 @@ def _bunny_service(
             "TASK_API_TYPE": bunny_type,
             "COLLECTION_ID": collection_id,
             "OMOP_DEATH_ENABLED": "true",
+            "OMOP_LOCATION_ENABLED": "true",
             "OMOP_SPECIMEN_ENABLED": "true",
         },
     }
