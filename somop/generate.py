@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import random
+import shutil
 import yaml
 import numpy as np
 import pandas as pd
@@ -167,8 +168,17 @@ def generate(
         "death": os.path.join(out_dir, "DEATH.csv"),
         "loc": os.path.join(out_dir, "LOCATION.csv"),
     }
+    # A prebuilt LOCATION file may itself live inside out_dir (i.e. be the same
+    # path as paths["loc"]). Never delete it in the clear loop below, or the read
+    # further down would fail and the user's source file would be lost.
+    prebuilt_loc = None
+    if cfg.location.enabled and cfg.location.prebuilt_file and not cfg.location.items:
+        prebuilt_loc = os.path.abspath(cfg.location.prebuilt_file)
+
     # clear existing outputs if any
-    for p in paths.values():
+    for key, p in paths.items():
+        if key == "loc" and prebuilt_loc and os.path.abspath(p) == prebuilt_loc:
+            continue
         if os.path.exists(p):
             os.remove(p)
 
@@ -226,9 +236,14 @@ def generate(
         location_ids = [item.location_id for item in cfg.location.items]
         logger.info("LOCATION: wrote %s rows", len(loc_models))
     elif cfg.location.enabled and cfg.location.prebuilt_file:
-        loc_df = pd.read_csv(cfg.location.prebuilt_file, sep="\t", dtype={"location_id": int})
-        write_df(loc_df, paths["loc"], header=True)
+        src = os.path.abspath(cfg.location.prebuilt_file)
+        dest = os.path.abspath(paths["loc"])
+        # Copy the prebuilt file verbatim (preserving its exact formatting) unless
+        # it is already the output file, in which case it is used in place.
+        if src != dest:
+            shutil.copy2(cfg.location.prebuilt_file, paths["loc"])
         wrote["loc"] = True
+        loc_df = pd.read_csv(paths["loc"], sep="\t", dtype={"location_id": int})
         location_ids = loc_df["location_id"].tolist()
         logger.info("LOCATION: loaded %s rows from %s", len(loc_df), cfg.location.prebuilt_file)
     location_ids_arr = np.array(location_ids) if location_ids else None
