@@ -208,6 +208,20 @@ def load(config_path, db_name, db_password, db_url, db_port, drop_db, concepts, 
     "For the embedded Postgres this reuses the persisted data volume from a previous load.",
 )
 @click.option(
+    "--bunny-a-interval",
+    default=5,
+    show_default=True,
+    type=int,
+    help="Polling interval in seconds for the bunny-a task resolver.",
+)
+@click.option(
+    "--bunny-b-interval",
+    default=20,
+    show_default=True,
+    type=int,
+    help="Polling interval in seconds for the bunny-b task resolver.",
+)
+@click.option(
     "--compose-out",
     default=None,
     type=click.Path(dir_okay=False, writable=True, path_type=str),
@@ -227,6 +241,8 @@ def run(
     concepts,
     bunny_build,
     skip_load,
+    bunny_a_interval,
+    bunny_b_interval,
     compose_out,
 ):
     with open(config_path) as f:
@@ -254,6 +270,8 @@ def run(
         drop_db=drop_db,
         bunny_build=bunny_build,
         skip_load=skip_load,
+        bunny_a_interval=bunny_a_interval,
+        bunny_b_interval=bunny_b_interval,
     )
 
     if compose_out is None:
@@ -355,6 +373,8 @@ def multi_run(config_path, compose_out):
             "db_url": entry.db_url,
             "drop_db": entry.drop_db,
             "bunny_build": multi_cfg.bunny_build,
+            "bunny_a_interval": entry.bunny_a_interval or multi_cfg.bunny_a_interval,
+            "bunny_b_interval": entry.bunny_b_interval or multi_cfg.bunny_b_interval,
         })
 
     compose_dict = build_multi_compose(datasets_params)

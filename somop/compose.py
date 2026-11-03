@@ -130,6 +130,8 @@ def _build_dataset_services(
     drop_db: bool = True,
     bunny_build: Optional[str] = None,
     skip_load: bool = False,
+    bunny_a_interval: int = 5,
+    bunny_b_interval: int = 20,
 ) -> tuple[dict, dict]:
     """Build the full services dict for one dataset.
 
@@ -245,6 +247,7 @@ def _build_dataset_services(
     else:
         bunny_depends = {f"loader{sfx}": {"condition": "service_completed_successfully"}}
 
+    polling_intervals = {"a": bunny_a_interval, "b": bunny_b_interval}
     for bunny_type in ("a", "b"):
         services[f"bunny-{bunny_type}{sfx}"] = _bunny_service(
             db_name=db_name,
@@ -259,6 +262,7 @@ def _build_dataset_services(
             bunny_type=bunny_type,
             bunny_build=bunny_build,
             depends_on=bunny_depends,
+            polling_interval=polling_intervals[bunny_type],
         )
     return services, volumes
 
@@ -277,6 +281,8 @@ def build_run_compose(
     drop_db: bool = True,
     bunny_build: Optional[str] = None,
     skip_load: bool = False,
+    bunny_a_interval: int = 5,
+    bunny_b_interval: int = 20,
 ) -> dict:
     services, volumes = _build_dataset_services(
         prefix="",
@@ -292,6 +298,8 @@ def build_run_compose(
         drop_db=drop_db,
         bunny_build=bunny_build,
         skip_load=skip_load,
+        bunny_a_interval=bunny_a_interval,
+        bunny_b_interval=bunny_b_interval,
     )
     compose = {"name": f"somop-{db_name}", "services": services}
     if volumes:
@@ -331,6 +339,7 @@ def _bunny_service(
     bunny_type: str,
     bunny_build: Optional[str] = None,
     depends_on: Optional[dict] = None,
+    polling_interval: int = 5,
 ) -> dict:
     image_or_build = (
         {"build": {"context": os.path.abspath(bunny_build)}}
@@ -361,6 +370,7 @@ def _bunny_service(
             "OMOP_DEATH_ENABLED": "true",
             "OMOP_LOCATION_ENABLED": "true",
             "OMOP_SPECIMEN_ENABLED": "true",
+            "POLLING_INTERVAL": polling_interval,
         },
     }
     if depends_on:
