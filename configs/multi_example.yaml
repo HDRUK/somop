@@ -7,8 +7,8 @@
 #   somop multi run      --config configs/multi_example.yaml
 
 api_url: http://host.docker.internal:8100/api/v1
-api_username: 53d0a39bfe92c6fe18a5e035630d3e6ef180366489b3a2c22cc03a7f6a3c1ca1
-api_password: a6a7f1cac6691df03a8cd04369d684fb004c8a7027a5c7a5b4104445528d20dd
+api_username: your-collection-host-client-id
+api_password: your-collection-host-client-secret
 db_password: postgres
 bunny_build: ../bunny/hutch-bunny # uncomment to use a local Bunny build
 concepts: ./data/CONCEPT.csv # shared CONCEPT.csv copied into every data dir

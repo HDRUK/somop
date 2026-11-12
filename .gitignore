@@ -208,3 +208,6 @@ __marimo__/
 
 data/
 out/
+docker-compose.multi.yaml
+.env.*
+!.env.example
