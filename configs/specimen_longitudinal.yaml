@@ -1,0 +1,116 @@
+seed: 202
+out_dir: ./out/specimen_longitudinal
+chunk_size: 10000
+
+person:
+  enabled: true
+  n_people: 10000
+  genders:
+    - concept_id: 8507
+      concept_name: Male
+      p: 0.49
+    - concept_id: 8532
+      concept_name: Female
+      p: 0.51
+  races:
+    - concept_id: 8527
+      concept_name: White
+      p: 0.85
+    - concept_id: 38003574
+      concept_name: Asian Indian
+      p: 0.04
+    - concept_id: 38003589
+      concept_name: Pakistani
+      p: 0.04
+    - concept_id: 38003600
+      concept_name: African
+      p: 0.04
+    - concept_id: 38003575
+      concept_name: Bangladeshi
+      p: 0.03
+  age_dist: normal
+  age_param1: 55.0
+  age_param2: 16.0
+  min_age: 18.0
+  max_age: 95.0
+
+condition:
+  enabled: true
+  items:
+    - concept_id: 201826
+      concept_name: Type 2 diabetes mellitus
+      p: 0.15
+    - concept_id: 320128
+      concept_name: Hypertensive disorder
+      p: 0.30
+    - concept_id: 4148906
+      concept_name: Ischemic heart disease
+      p: 0.10
+    - concept_id: 198185
+      concept_name: Chronic kidney disease (broad)
+      p: 0.08
+
+drug_exposure:
+  enabled: false
+
+measurement:
+  enabled: false
+
+observation:
+  enabled: false
+
+procedure:
+  enabled: false
+
+specimen:
+  enabled: true
+  items:
+    - concept_id: 4332531
+      concept_name: Urine cytologic material
+      p: 0.60
+    - concept_id: 4332531
+      concept_name: Urine cytologic material
+      p: 0.40
+    - concept_id: 4332531
+      concept_name: Urine cytologic material
+      p: 0.25
+    - concept_id: 4004342
+      concept_name: Urinary bladder cytologic material
+      p: 0.30
+    - concept_id: 4004342
+      concept_name: Urinary bladder cytologic material
+      p: 0.20
+    - concept_id: 4006635
+      concept_name: Upper respiratory tract cytologic material
+      p: 0.30
+    - concept_id: 4006635
+      concept_name: Upper respiratory tract cytologic material
+      p: 0.20
+    - concept_id: 4004344
+      concept_name: Urinary tract cytologic material
+      p: 0.15
+    - concept_id: 4006647
+      concept_name: Upper urinary tract cytologic material
+      p: 0.08
+    - concept_id: 4004346
+      concept_name: Ureter cytologic material
+      p: 0.05
+    - concept_id: 4007441
+      concept_name: Urethra cytologic material
+      p: 0.05
+    - concept_id: 4006641
+      concept_name: Tracheal cytologic material
+      p: 0.08
+    - concept_id: 4021538
+      concept_name: Upper aerodigestive tract cytologic material
+      p: 0.06
+    - concept_id: 4007308
+      concept_name: Vocal cord cytologic material
+      p: 0.03
+
+death:
+  enabled: false
+
+location:
+  enabled: true
+  prebuilt_file: data/scotland_locations.csv

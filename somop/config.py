@@ -115,6 +115,8 @@ class DatasetEntry(BaseModel):
     db_url: Optional[str] = None
     db_port: Optional[int] = None
     drop_db: bool = True
+    bunny_a_interval: Optional[int] = None
+    bunny_b_interval: Optional[int] = None
 
 
 class MultiConfig(BaseModel):
@@ -124,6 +126,8 @@ class MultiConfig(BaseModel):
     db_password: str = "postgres"
     bunny_build: Optional[str] = None
     concepts: Optional[str] = None
+    bunny_a_interval: int = 5
+    bunny_b_interval: int = 20
     datasets: List[DatasetEntry]
 
 

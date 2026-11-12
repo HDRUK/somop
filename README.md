@@ -76,6 +76,8 @@ somop run --config configs/conditions.yaml \
 | `--drop-db` / `--no-drop-db` | drop | When using `--db-url`: drop and recreate the DB before loading |
 | `--concepts` | — | Path to `CONCEPT.csv` to copy into the data directory before loading |
 | `--bunny-build` | — | Path to a local Bunny build context (Dockerfile directory) instead of pulling the remote image |
+| `--bunny-a-interval` | `5` | Polling interval (seconds) for the bunny-a task resolver |
+| `--bunny-b-interval` | `20` | Polling interval (seconds) for the bunny-b task resolver |
 | `--compose-out` | `<out_dir>/docker-compose.run.yaml` | Where to write the compose file |
 
 **With an external Postgres** (e.g. a persistent dev DB):
@@ -135,6 +137,8 @@ api_password: secret
 db_password: postgres
 # bunny_build: ../bunny/hutch-bunny
 # concepts: ./data/CONCEPT.csv
+bunny_a_interval: 5   # optional: default polling interval (seconds) for all bunny-a instances
+bunny_b_interval: 20  # optional: default polling interval (seconds) for all bunny-b instances
 
 datasets:
   - name: conditions
@@ -148,8 +152,10 @@ datasets:
   - name: diabetes
     config: configs/uk_t2d_primary_care.yaml
     collection_id: <uuid-3>
-    db_port: 5435        # optional: expose this DB on a host port
-    db_password: secret  # optional: override global db_password
+    db_port: 5435            # optional: expose this DB on a host port
+    db_password: secret      # optional: override global db_password
+    bunny_a_interval: 2      # optional: override global bunny_a_interval for this dataset
+    bunny_b_interval: 10     # optional: override global bunny_b_interval for this dataset
 ```
 
 `api_url`, `api_username`, `api_password`, `db_password`, `bunny_build`, and `concepts` are global defaults. Per-dataset overrides: `db_name`, `db_password`, `db_url`, `db_port`, `drop_db`.
